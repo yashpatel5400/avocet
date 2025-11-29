@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Sequence, Tuple
 
 import cvxpy as cp
 import numpy as np
+import torch
 
 from .region import (
     EllipsoidRegion,
@@ -83,15 +84,38 @@ class DanskinRobustOptimizer:
         self,
         region: PredictionRegion,
         inner_objective_fn: Callable[[cp.Variable, np.ndarray], cp.Expression],
-        value_and_grad_fn: Callable[[np.ndarray, np.ndarray], tuple[float, np.ndarray]],
+        value_and_grad_fn: Optional[Callable[[np.ndarray, np.ndarray], tuple[float, np.ndarray]]] = None,
+        torch_value_fn: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
         project_fn: Optional[Callable[[np.ndarray], np.ndarray]] = None,
         solver: str = "ECOS",
     ):
         self.region = region
         self.inner_objective_fn = inner_objective_fn
-        self.value_and_grad_fn = value_and_grad_fn
+        if value_and_grad_fn is None and torch_value_fn is None:
+            raise ValueError("Provide either value_and_grad_fn or torch_value_fn.")
+        if value_and_grad_fn is None and torch_value_fn is not None:
+            self.value_and_grad_fn = self._make_torch_value_grad(torch_value_fn)
+        else:
+            assert value_and_grad_fn is not None
+            self.value_and_grad_fn = value_and_grad_fn
         self.project_fn = project_fn
         self.solver = solver
+
+    @staticmethod
+    def _make_torch_value_grad(
+        torch_value_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]
+    ) -> Callable[[np.ndarray, np.ndarray], tuple[float, np.ndarray]]:
+        def wrapper(w_np: np.ndarray, theta_np: np.ndarray) -> tuple[float, np.ndarray]:
+            w_t = torch.tensor(w_np, dtype=torch.float64, requires_grad=True)
+            theta_t = torch.tensor(theta_np, dtype=torch.float64)
+            val_t = torch_value_fn(w_t, theta_t)
+            if val_t.dim() != 0:
+                val_t = val_t.squeeze()
+            val_t.backward()
+            grad = w_t.grad.detach().cpu().numpy().astype(float)
+            return float(val_t.item()), grad
+
+        return wrapper
 
     def _argmax_theta(self, w: np.ndarray, region: PredictionRegion) -> tuple[np.ndarray, float]:
         if isinstance(region, UnionRegion):

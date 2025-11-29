@@ -8,6 +8,7 @@ Run any script with `python examples/<script>.py`.
 - `robust_ellipsoid.py`: Robust constraint over an ellipsoidal set (Mahalanobis score).
 - `robust_union.py`: Scenario-based robust optimization over a union of convex sets.
 - `robust_union_danskin.py`: Gradient-based Danskin optimizer over a union of convex sets.
+- `robust_union_danskin_autograd.py`: Same Danskin optimizer, with gradients computed via PyTorch autograd.
 - `robust_supply_planning.py`: End-to-end training + calibration + calibration curve + robust planning.
 
 See `examples/README.md` for mathematical formulations.

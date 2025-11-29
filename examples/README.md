@@ -69,6 +69,9 @@ Same union as above, solved with a gradient-based Danskin optimizer:
 \]
 Inner maximization is solved per component; gradient uses the argmax to update $w$.
 
+## `robust_union_danskin_autograd.py`
+Same as above, but the outer gradient is computed via PyTorch autograd by passing a torch scalar value function.
+
 ---
 
 ## `robust_supply_planning.py`

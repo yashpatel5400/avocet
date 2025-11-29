@@ -21,5 +21,6 @@
 - `robustify_affine_leq(theta_direction, rhs, region)`: robust linear inequality.
 - `ScenarioRobustOptimizer(decision_shape, objective_fn, constraints_fn=None, num_samples=128, seed=None)`
   - `build_problem(region, solver=None) -> cp.Problem`
-- `DanskinRobustOptimizer(region, inner_objective_fn, value_and_grad_fn, project_fn=None, solver="ECOS")`
+- `DanskinRobustOptimizer(region, inner_objective_fn, value_and_grad_fn=None, torch_value_fn=None, project_fn=None, solver="ECOS")`
   - `solve(w0, step_size=..., max_iters=..., tol=..., verbose=False) -> (w*, history)`
+  - Either provide `value_and_grad_fn` (returns value, grad_w) or a PyTorch scalar `torch_value_fn(w_tensor, theta_tensor)` for autograd-based gradients.
