@@ -24,3 +24,6 @@
 - `DanskinRobustOptimizer(region, inner_objective_fn, value_and_grad_fn=None, torch_value_fn=None, project_fn=None, solver="ECOS")`
   - `solve(w0, step_size=..., max_iters=..., tol=..., verbose=False) -> (w*, history)`
   - Either provide `value_and_grad_fn` (returns value, grad_w) or a PyTorch scalar `torch_value_fn(w_tensor, theta_tensor)` for autograd-based gradients.
+
+## Metrics
+- Regions expose `volume` (analytic where available) and `volume_mc(bounds, num_samples=...)` for Monte Carlo estimation.

@@ -25,7 +25,6 @@ from .decision import (
     robustify_affine_leq,
     DanskinRobustOptimizer,
 )
-
 __all__ = [
     "L1Score",
     "L2Score",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import math
 from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
@@ -40,6 +41,31 @@ class PredictionRegion(abc.ABC):
     def as_union(self) -> Sequence["PredictionRegion"]:
         """Return components if union; otherwise singleton list."""
         return [self]
+
+    @property
+    def volume(self) -> Optional[float]:
+        """Exact volume if available; otherwise None."""
+        return None
+
+    def volume_mc(
+        self, bounds: Tuple[np.ndarray, np.ndarray], num_samples: int = 20000, rng: Optional[np.random.Generator] = None
+    ) -> float:
+        """
+        Monte Carlo volume estimate within bounding box (low, high).
+        Useful for unions or shapes without closed-form volumes.
+        """
+        if rng is None:
+            rng = np.random.default_rng()
+        low, high = bounds
+        low = np.asarray(low)
+        high = np.asarray(high)
+        if low.shape != high.shape:
+            raise ValueError("bounds must have same shape")
+        dim = low.shape[0]
+        samples = rng.uniform(low=low, high=high, size=(num_samples, dim))
+        mask = np.array([self.contains(p) for p in samples], dtype=float)
+        vol_box = float(np.prod(high - low))
+        return vol_box * float(mask.mean())
 
     @staticmethod
     def l2_ball(center: np.ndarray, radius: float) -> "PredictionRegion":
@@ -92,6 +118,11 @@ class L2BallRegion(PredictionRegion):
     def is_convex(self) -> bool:
         return True
 
+    @property
+    def volume(self) -> Optional[float]:
+        d = self.center.shape[-1]
+        return _ball_volume_unit(d) * (self.radius**d)
+
 
 class L1BallRegion(PredictionRegion):
     def __init__(self, center: np.ndarray, radius: float):
@@ -127,6 +158,11 @@ class L1BallRegion(PredictionRegion):
     def is_convex(self) -> bool:
         return True
 
+    @property
+    def volume(self) -> Optional[float]:
+        d = self.center.shape[-1]
+        return (2**d / math.factorial(d)) * (self.radius**d)
+
 
 class LinfBallRegion(PredictionRegion):
     def __init__(self, center: np.ndarray, radius: float):
@@ -155,6 +191,11 @@ class LinfBallRegion(PredictionRegion):
 
     def is_convex(self) -> bool:
         return True
+
+    @property
+    def volume(self) -> Optional[float]:
+        d = self.center.shape[-1]
+        return (2 * self.radius) ** d
 
 
 class EllipsoidRegion(PredictionRegion):
@@ -195,6 +236,14 @@ class EllipsoidRegion(PredictionRegion):
     def is_convex(self) -> bool:
         return True
 
+    @property
+    def volume(self) -> Optional[float]:
+        d = self.center.shape[-1]
+        det = np.linalg.det(self.shape_matrix)
+        if det <= 0:
+            return None
+        return _ball_volume_unit(d) * (self.radius**d) / math.sqrt(det)
+
 
 class UnionRegion(PredictionRegion):
     def __init__(self, regions: Sequence[PredictionRegion]):
@@ -228,3 +277,7 @@ class UnionRegion(PredictionRegion):
 
     def as_union(self) -> Sequence["PredictionRegion"]:
         return list(self.regions)
+
+
+def _ball_volume_unit(d: int) -> float:
+    return math.pi ** (d / 2) / math.gamma(d / 2 + 1)
