@@ -28,3 +28,16 @@ Synthetic predict-then-optimize example for robust shortest path:
 2. Calibrate with a GPCP score using K samples per point; region is a union of L2 balls.
 3. Robust shortest path: minimize worst-case cost across sampled centers with an L2 buffer.
 4. Compare robust vs nominal cost on a held-out true cost vector.
+
+## `robust_bike_newsvendor.py`
+Bike rental demand (UCI Bike Sharing):
+1. Train a PyTorch predictor for daily bike demand.
+2. Calibrate with split conformal (L2), plot calibration curve.
+3. Robust newsvendor decision using scenario sampling over conformal L2-ball regions; compare to nominal decisions on test days.
+
+## `robust_shortest_path.py`
+Synthetic predict-then-optimize example for robust shortest path:
+1. Train a generative predictor (Gaussian) for edge costs given features.
+2. Calibrate with a GPCP score using K samples per point; region is a union of L2 balls.
+3. Robust shortest path: minimize worst-case cost across sampled centers with an L2 buffer.
+4. Compare robust vs nominal cost on a held-out true cost vector.
