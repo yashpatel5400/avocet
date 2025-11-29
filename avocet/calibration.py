@@ -58,6 +58,5 @@ class SplitConformalCalibrator:
             raise RuntimeError("Calibrator not fitted. Call calibrate(alpha) first.")
         x = x.to(self.device)
         pred = self.predictor(x)
-        if pred.numel() != pred.shape[-1]:
-            pred = pred.squeeze(0)
+        # For GPCP-style scores, predictor may return samples directly
         return self.score_fn.build_region(pred, self._quantile)

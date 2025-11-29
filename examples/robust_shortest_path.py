@@ -14,6 +14,9 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
+from avocet import SplitConformalCalibrator
+from avocet.scores import GPCPScore, conformal_quantile
+
 
 def make_graph():
     # Small directed graph
@@ -69,32 +72,6 @@ def train_model(model, loader, epochs=50, lr=1e-2):
             opt.step()
 
 
-def gpcp_scores(model, x, y, K=8):
-    model.eval()
-    with torch.no_grad():
-        samples, _ = model(x, n_samples=K)  # shape (K, batch, d)
-        diffs = samples - y.unsqueeze(0)
-        norms = torch.norm(diffs, dim=-1)  # (K, batch)
-        min_norm, _ = torch.min(norms, dim=0)  # (batch,)
-    return min_norm.cpu().numpy()
-
-
-def compute_quantile(scores, alpha):
-    scores = np.sort(scores)
-    n = len(scores)
-    k = int(np.ceil((n + 1) * (1 - alpha)) - 1)
-    k = min(max(k, 0), n - 1)
-    return float(scores[k])
-
-
-def build_union_region(model, x, K, q):
-    model.eval()
-    with torch.no_grad():
-        samples, _ = model(x, n_samples=K)
-        centers = samples.squeeze(1).cpu().numpy()  # (K, d)
-    return centers, q
-
-
 def robust_shortest_path(A, b, centers, radius):
     E = A.shape[1]
     w = cp.Variable(E)
@@ -135,20 +112,32 @@ def main():
     model = GenerativePredictor(d_in=d_in, d_out=d_out)
     train_model(model, loader, epochs=200, lr=5e-3)
 
-    # Calibration
-    cal_scores = []
-    for xb, yb in DataLoader(TensorDataset(x_cal, y_cal), batch_size=32):
-        cal_scores.append(gpcp_scores(model, xb, yb, K=8))
-    cal_scores = np.concatenate(cal_scores)
+    # Calibration using GPCPScore + SplitConformalCalibrator
+    K = 8
+
+    def sampler(xb: torch.Tensor) -> torch.Tensor:
+        samples, _ = model(xb, n_samples=K)
+        return samples
+
+    score_fn = GPCPScore(sampler)
+
+    # For GPCPScore, predictor should return samples directly
+    def predictor(xb: torch.Tensor) -> torch.Tensor:
+        return sampler(xb)
+
+    cal_loader = DataLoader(TensorDataset(x_cal, y_cal), batch_size=32)
+    calibrator = SplitConformalCalibrator(predictor, score_fn, cal_loader)
     alpha = 0.1
-    q = compute_quantile(cal_scores, alpha)
+    q = calibrator.calibrate(alpha=alpha)
     print(f"Calibrated GPCP radius q: {q:.4f}")
 
     # Pick a test point
     x_new = x_test[0:1]
     y_true = y_test[0].numpy()
-    centers, radius = build_union_region(model, x_new, K=8, q=q)
+    region = calibrator.predict_region(x_new)
+    centers = np.stack([r.center for r in region.as_union()]) if hasattr(region, "as_union") else np.array([region.center])
     mean_pred = centers.mean(axis=0)
+    radius = q
 
     # Robust vs nominal
     w_robust, status_r = robust_shortest_path(A, b, centers, radius)

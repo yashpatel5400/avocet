@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
@@ -118,6 +118,45 @@ class MahalanobisScore(ScoreFunction):
         if center.ndim == 0:
             center = center.reshape(1)
         return EllipsoidRegion(center=center, shape_matrix=self.weight, radius=float(quantile))
+
+
+class GPCPScore(ScoreFunction):
+    """
+    Generalized Probabilistic Conformal Prediction score:
+    s(x, y) = min_{k} || sample_k(x) - y ||_2.
+
+    The predictor is assumed to be a callable returning samples of shape (K, batch, d).
+    """
+
+    def __init__(self, sampler: Callable[[torch.Tensor], torch.Tensor]):
+        """
+        sampler: function x -> samples of shape (K, batch, d) or (K, d)
+        """
+        self.sampler = sampler
+
+    @property
+    def name(self) -> str:
+        return "gpcp"
+
+    def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        # prediction is ignored; sampler produces samples given target's x upstream
+        samples = prediction  # reuse argument name for compatibility; caller passes samples
+        if samples.dim() == 2:
+            samples = samples.unsqueeze(1)  # (K, 1, d)
+        diffs = samples - target.unsqueeze(0)
+        norms = torch.norm(diffs, dim=-1)
+        min_norm, _ = torch.min(norms, dim=0)
+        return min_norm
+
+    def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
+        # prediction expected shape (K, d)
+        centers = prediction.detach().cpu().numpy()
+        if centers.ndim == 1:
+            centers = centers.reshape(1, -1)
+        regions = [L2BallRegion(center=c, radius=float(quantile)) for c in centers]
+        if len(regions) == 1:
+            return regions[0]
+        return UnionRegion(regions)
 
 
 def conformal_quantile(scores: torch.Tensor, alpha: float) -> float:

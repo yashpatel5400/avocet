@@ -12,6 +12,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Examples: examples.md
+  - Concepts: concepts.md
   - API: api.md
   - Contributing: contributing.md
   - Publishing: publishing.md
