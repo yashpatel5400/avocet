@@ -100,3 +100,17 @@ Run with `python examples/robust_l2.py` (similar for others).
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.
 - For non-convex regions, return `PredictionRegion.union([...])` so optimizers can decompose or sample.
 - Use the scenario optimizer as a default inner-approximation; for affine cases use the deterministic robustifiers above.
+
+## Contributing
+Please open issues for bugs/feature requests and PRs for fixes/additions. See CONTRIBUTING.md for guidelines.
+
+## Citation
+If you use Avocet in academic work, please cite:
+```
+@software{avocet,
+  title = {Avocet: Conformal prediction and robust decision making},
+  author = {Avocet Contributors},
+  year = {2024},
+  url = {https://github.com/your-org/avocet}
+}
+```
