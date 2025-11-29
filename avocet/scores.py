@@ -42,6 +42,69 @@ class L2Score(ScoreFunction):
         return PredictionRegion.l2_ball(center=center, radius=float(quantile))
 
 
+class L1Score(ScoreFunction):
+    """
+    L1 residual score: s(x, y) = ||pred - y||_1.
+    Induces an L1 ball prediction region around the point prediction.
+    """
+
+    def __init__(self):
+        self.geometry = ScoreGeometry(name="l1_ball", convex=True, union=False, params={"p": 1})
+
+    def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        return torch.norm(prediction - target, p=1, dim=-1)
+
+    def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
+        center = prediction.detach().cpu().numpy()
+        if center.ndim == 0:
+            center = center.reshape(1)
+        return PredictionRegion.l1_ball(center=center, radius=float(quantile))
+
+
+class LinfScore(ScoreFunction):
+    """
+    Linf residual score: s(x, y) = ||pred - y||_inf.
+    Induces an L-infinity (hypercube) prediction region around the point prediction.
+    """
+
+    def __init__(self):
+        self.geometry = ScoreGeometry(name="linf_ball", convex=True, union=False, params={"p": np.inf})
+
+    def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        return torch.norm(prediction - target, p=float("inf"), dim=-1)
+
+    def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
+        center = prediction.detach().cpu().numpy()
+        if center.ndim == 0:
+            center = center.reshape(1)
+        return PredictionRegion.linf_ball(center=center, radius=float(quantile))
+
+
+class MahalanobisScore(ScoreFunction):
+    """
+    Mahalanobis residual: s(x, y) = sqrt((pred - y)^T W (pred - y)).
+    W must be positive definite; induces an ellipsoidal region.
+    """
+
+    def __init__(self, weight: np.ndarray):
+        if weight.shape[0] != weight.shape[1]:
+            raise ValueError("weight must be square")
+        self.weight = weight
+        self.geometry = ScoreGeometry(name="ellipsoid", convex=True, union=False, params={"shape": "psd"})
+
+    def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        diff = prediction - target
+        w = torch.as_tensor(self.weight, device=diff.device, dtype=diff.dtype)
+        # batch quadratic form
+        return torch.sqrt(torch.einsum("bi,ij,bj->b", diff, w, diff))
+
+    def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
+        center = prediction.detach().cpu().numpy()
+        if center.ndim == 0:
+            center = center.reshape(1)
+        return PredictionRegion.ellipsoid(center=center, shape_matrix=self.weight, radius=float(quantile))
+
+
 def conformal_quantile(scores: torch.Tensor, alpha: float) -> float:
     """
     Compute the split-conformal quantile with finite-sample correction.

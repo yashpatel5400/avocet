@@ -5,7 +5,13 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
 ## What this package does
 - Calibrate PyTorch predictors with split conformal prediction and geometry-aware score functions.
 - Produce prediction regions (convex or unions) that can be sampled, visualized (1D/2D), or passed to downstream optimizers.
-- Build scenario-based robust decision problems that respect conformal regions.
+- Build deterministic or scenario-based robust decision problems that respect conformal regions.
+
+Supported scores/geometries with closed-form robustification:
+- L2 residual (`L2Score`) → L2 ball.
+- L1 residual (`L1Score`) → L1 ball.
+- Linf residual (`LinfScore`) → Linf ball (hypercube).
+- Mahalanobis residual (`MahalanobisScore`) → ellipsoid.
 
 ## Quickstart (split conformal, L2 residual score)
 ```python
@@ -59,7 +65,37 @@ vis.plot_region_2d(region, grid_limits=((-1, 1), (-1, 1)), resolution=200)
 plt.show()
 ```
 
+## Deterministic closed-form robustification (affine in the uncertainty)
+For linear/affine dependence on the uncertain parameter `theta`, you can avoid sampling and use support functions:
+```python
+import cvxpy as cp
+import numpy as np
+from avocet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
+
+region = PredictionRegion.l2_ball(center=np.array([0.2, -0.1]), radius=0.3)
+w = cp.Variable(2)
+
+# Robust constraint: <w, theta> <= 1 for all theta in region
+constr = robustify_affine_leq(theta_direction=w, rhs=1.0, region=region)
+
+# Robust objective: minimize ||w||_2 + worst_case(<c, theta>)
+c = w  # example direction depending on w
+obj = robustify_affine_objective(base_obj=cp.norm(w, 2), theta_direction=c, region=region)
+
+prob = cp.Problem(cp.Minimize(obj), [constr])
+prob.solve(solver="ECOS")
+print(w.value)
+```
+
+## Examples
+- `examples/robust_l2.py` — L2 ball robust constraint.
+- `examples/robust_l1.py` — L1 ball robust constraint.
+- `examples/robust_linf.py` — Linf (hypercube) robust constraint.
+- `examples/robust_ellipsoid.py` — ellipsoidal robust constraint.
+
+Run with `python examples/robust_l2.py` (similar for others).
+
 ## Extending
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.
 - For non-convex regions, return `PredictionRegion.union([...])` so optimizers can decompose or sample.
-- Use the scenario optimizer as a default inner-approximation; more specialized robust counterparts can be layered on top when closed-form support functions are available.
+- Use the scenario optimizer as a default inner-approximation; for affine cases use the deterministic robustifiers above.

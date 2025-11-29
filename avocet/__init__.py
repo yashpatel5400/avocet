@@ -8,16 +8,27 @@ Exposes:
 - Scenario-based robust decision-making helpers.
 """
 
-from .scores import L2Score, ScoreFunction
+from .scores import L1Score, L2Score, LinfScore, MahalanobisScore, ScoreFunction
 from .calibration import SplitConformalCalibrator
 from .region import PredictionRegion, ScoreGeometry
-from .decision import ScenarioRobustOptimizer
+from .decision import (
+    ScenarioRobustOptimizer,
+    support_function,
+    robustify_affine_objective,
+    robustify_affine_leq,
+)
 
 __all__ = [
+    "L1Score",
     "L2Score",
+    "LinfScore",
+    "MahalanobisScore",
     "ScoreFunction",
     "SplitConformalCalibrator",
     "PredictionRegion",
     "ScoreGeometry",
     "ScenarioRobustOptimizer",
+    "support_function",
+    "robustify_affine_objective",
+    "robustify_affine_leq",
 ]
