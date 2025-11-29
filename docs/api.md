@@ -12,7 +12,8 @@
 
 ## Regions
 - Factory methods: `PredictionRegion.l2_ball`, `.l1_ball`, `.linf_ball`, `.ellipsoid`, `.union([...])`
-- Methods: `sample(n)`, `contains(y)`, `cvxpy_constraints(var)` (convex only), `is_convex()`
+- Methods: `sample(n)`, `contains(y)`, `cvxpy_constraints(var)` (convex sets only), `is_convex()`
+  - For unions, use support functions (`support_function`) or scenario-based optimization; no single convex constraint is provided.
 
 ## Robust optimization helpers
 - `support_function(region, direction)`: support of a convex region (union over-approximated by max of components).
@@ -20,3 +21,5 @@
 - `robustify_affine_leq(theta_direction, rhs, region)`: robust linear inequality.
 - `ScenarioRobustOptimizer(decision_shape, objective_fn, constraints_fn=None, num_samples=128, seed=None)`
   - `build_problem(region, solver=None) -> cp.Problem`
+- `DanskinRobustOptimizer(region, inner_objective_fn, value_and_grad_fn, project_fn=None, solver="ECOS")`
+  - `solve(w0, step_size=..., max_iters=..., tol=..., verbose=False) -> (w*, history)`

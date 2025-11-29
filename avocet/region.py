@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import abc
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -28,7 +28,9 @@ class PredictionRegion(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def cvxpy_constraints(self, theta_var: "cp.Variable") -> List["cp.Constraint"]:
+    def cvxpy_constraints(
+        self, theta_var: "cp.Variable", theta_bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    ) -> List["cp.Constraint"]:
         ...
 
     @abc.abstractmethod
@@ -115,7 +117,9 @@ class L1BallRegion(PredictionRegion):
     def contains(self, y: np.ndarray) -> bool:
         return float(np.linalg.norm(y - self.center, ord=1)) <= self.radius + 1e-8
 
-    def cvxpy_constraints(self, theta_var: "cp.Variable") -> List["cp.Constraint"]:
+    def cvxpy_constraints(
+        self, theta_var: "cp.Variable", theta_bounds: Optional[tuple[np.ndarray, np.ndarray]] = None
+    ) -> List["cp.Constraint"]:
         if cp is None:
             raise ImportError("cvxpy is required for constraint generation.")
         return [cp.norm1(theta_var - self.center) <= self.radius]
@@ -142,7 +146,9 @@ class LinfBallRegion(PredictionRegion):
     def contains(self, y: np.ndarray) -> bool:
         return float(np.linalg.norm(y - self.center, ord=np.inf)) <= self.radius + 1e-8
 
-    def cvxpy_constraints(self, theta_var: "cp.Variable") -> List["cp.Constraint"]:
+    def cvxpy_constraints(
+        self, theta_var: "cp.Variable", theta_bounds: Optional[tuple[np.ndarray, np.ndarray]] = None
+    ) -> List["cp.Constraint"]:
         if cp is None:
             raise ImportError("cvxpy is required for constraint generation.")
         return [cp.norm(theta_var - self.center, "inf") <= self.radius]
@@ -179,7 +185,9 @@ class EllipsoidRegion(PredictionRegion):
         diff = y - self.center
         return float(diff.T @ self.shape_matrix @ diff) <= self.radius**2 + 1e-8
 
-    def cvxpy_constraints(self, theta_var: "cp.Variable") -> List["cp.Constraint"]:
+    def cvxpy_constraints(
+        self, theta_var: "cp.Variable", theta_bounds: Optional[tuple[np.ndarray, np.ndarray]] = None
+    ) -> List["cp.Constraint"]:
         if cp is None:
             raise ImportError("cvxpy is required for constraint generation.")
         return [cp.quad_form(theta_var - self.center, self.shape_matrix) <= self.radius**2]
@@ -210,8 +218,10 @@ class UnionRegion(PredictionRegion):
     def contains(self, y: np.ndarray) -> bool:
         return any(region.contains(y) for region in self.regions)
 
-    def cvxpy_constraints(self, theta_var: "cp.Variable") -> List["cp.Constraint"]:
-        raise ValueError("Union regions require decomposition; no single convex constraint.")
+    def cvxpy_constraints(
+        self, theta_var: "cp.Variable", theta_bounds: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    ) -> List["cp.Constraint"]:
+        raise ValueError("Union regions have no single convex CVXPY constraint; use support functions or sampling.")
 
     def is_convex(self) -> bool:
         return False

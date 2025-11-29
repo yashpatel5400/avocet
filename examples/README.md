@@ -60,7 +60,14 @@ Uncertainty set: Union of two L2 balls $ \Theta = \Theta_1 \cup \Theta_2 $.
 \min_w \ \|w - \theta\|_2^2 \quad \text{s.t.} \quad w \in [-1, 1]^2 \ \forall \theta \in \Theta
 ```
 
-Approach: Decompose over components and approximate each with scenarios, taking the max objective across components.
+Approach: Decompose over components and approximate each with scenarios or via support-function maximization over components.
+
+## `robust_union_danskin.py`
+Same union as above, solved with a gradient-based Danskin optimizer:
+\[
+\min_w \max_{\theta \in \Theta} \|w - \theta\|_2^2 \quad \text{s.t.} \quad w \in [-1, 1]^2
+\]
+Inner maximization is solved per component; gradient uses the argmax to update $w$.
 
 ---
 

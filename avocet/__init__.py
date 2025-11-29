@@ -23,6 +23,7 @@ from .decision import (
     support_function,
     robustify_affine_objective,
     robustify_affine_leq,
+    DanskinRobustOptimizer,
 )
 
 __all__ = [
@@ -39,6 +40,7 @@ __all__ = [
     "EllipsoidRegion",
     "UnionRegion",
     "ScenarioRobustOptimizer",
+    "DanskinRobustOptimizer",
     "support_function",
     "robustify_affine_objective",
     "robustify_affine_leq",
