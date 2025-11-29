@@ -109,8 +109,8 @@ If you use Avocet in academic work, please cite:
 ```
 @software{avocet,
   title = {Avocet: Conformal prediction and robust decision making},
-  author = {Avocet Contributors},
-  year = {2024},
-  url = {https://github.com/your-org/avocet}
+  author = {Yash Patel},
+  year = {2025},
+  url = {https://github.com/yashpatel5400/avocet}
 }
 ```
