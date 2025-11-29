@@ -21,6 +21,6 @@ def test_robust_constraint_linf():
     w = cp.Variable(2)
     constr = robustify_affine_leq(theta_direction=w, rhs=1.0, region=region)
     prob = cp.Problem(cp.Minimize(cp.norm(w, 2)), [constr])
-    prob.solve(solver="ECOS")
+    prob.solve()
     assert prob.status == cp.OPTIMAL
     assert np.all(np.abs(w.value) <= 1.0)  # should satisfy robust constraint
