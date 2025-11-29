@@ -110,6 +110,7 @@ print(w.value)
 
 ## Examples
 - `examples/robust_supply_planning.py` — end-to-end: train + conformalize predictor, plot calibration curve, solve robust planning.
+- `examples/robust_shortest_path.py` — generative predictor + union-of-balls region for robust shortest path.
 
 Run with `python examples/robust_supply_planning.py`.
 
