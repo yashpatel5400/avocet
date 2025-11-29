@@ -109,16 +109,9 @@ print(w.value)
 ```
 
 ## Examples
-- `examples/robust_l2.py` — L2 ball robust constraint.
-- `examples/robust_l1.py` — L1 ball robust constraint.
-- `examples/robust_linf.py` — Linf (hypercube) robust constraint.
-- `examples/robust_ellipsoid.py` — ellipsoidal robust constraint.
-- `examples/robust_union.py` — union of balls via scenario-based max over components.
-- `examples/robust_union_danskin.py` — union of balls via gradient-based Danskin optimizer (manual gradients).
-- `examples/robust_union_danskin_autograd.py` — union of balls via Danskin optimizer with PyTorch autograd.
-- `examples/robust_supply_planning.py` — end-to-end: train + calibrate predictor, plot calibration curve, solve robust planning.
+- `examples/robust_supply_planning.py` — end-to-end: train + conformalize predictor, plot calibration curve, solve robust planning.
 
-Run with `python examples/robust_l2.py` (similar for others).
+Run with `python examples/robust_supply_planning.py`.
 
 ## Extending
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.

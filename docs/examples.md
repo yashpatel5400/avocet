@@ -2,13 +2,6 @@
 
 Run any script with `python examples/<script>.py`.
 
-- `robust_l2.py`: Robust constraint over an L2 ball.
-- `robust_l1.py`: Robust constraint over an L1 ball.
-- `robust_linf.py`: Robust constraint over an Linf (hypercube) ball.
-- `robust_ellipsoid.py`: Robust constraint over an ellipsoidal set (Mahalanobis score).
-- `robust_union.py`: Scenario-based robust optimization over a union of convex sets.
-- `robust_union_danskin.py`: Gradient-based Danskin optimizer over a union of convex sets.
-- `robust_union_danskin_autograd.py`: Same Danskin optimizer, with gradients computed via PyTorch autograd.
-- `robust_supply_planning.py`: End-to-end training + calibration + calibration curve + robust planning.
+- `robust_supply_planning.py`: End-to-end training + conformal calibration + calibration curve + robust planning.
 
 See `examples/README.md` for mathematical formulations.
