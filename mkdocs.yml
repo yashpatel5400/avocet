@@ -1,6 +1,6 @@
 site_name: Avocet
 site_description: Conformal prediction and robust decision-making toolkit
-repo_url: https://github.com/your-org/avocet
+repo_url: https://github.com/yashpatel5400/avocet
 theme:
   name: material
   features:

@@ -13,7 +13,7 @@
    ```
 4. Verify install:
    ```bash
-   pip install --no-cache-dir avocet
+   pip install --no-cache-dir avocet-cp
    ```
 
 For TestPyPI, replace the upload command with:

@@ -1,4 +1,4 @@
-# <img src="logo.png" alt="Avocet logo" width="64" height="64" style="vertical-align:middle; margin-right:8px;" /> avocet
+# <img src="logo.png" alt="Avocet logo" width="64" height="64" style="vertical-align:middle; margin-right:8px;" /> avocet-cp
 
 Conformal prediction + robust decision making with PyTorch predictors and CVXPY optimizers.
 
@@ -7,11 +7,11 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
 ## Install
 - From PyPI (once published):
   ```bash
-  pip install avocet
+  pip install avocet-cp
   ```
 - From source:
   ```bash
-  git clone https://github.com/your-org/avocet
+  git clone https://github.com/yashpatel5400/avocet
   cd avocet
   pip install .
   ```
