@@ -1,4 +1,4 @@
-# <img src="logo.png" alt="Avocet logo" width="48" height="48" style="vertical-align:middle; margin-right:8px;" /> avocet
+# <img src="logo.png" alt="Avocet logo" width="64" height="64" style="vertical-align:middle; margin-right:8px;" /> avocet
 
 Conformal prediction + robust decision making with PyTorch predictors and CVXPY optimizers.
 
