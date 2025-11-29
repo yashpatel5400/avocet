@@ -7,9 +7,6 @@
 
 Conformal prediction + robust decision making with PyTorch predictors and CVXPY optimizers.
 
-**Docs:** https://ypatel.io/avocet/
-**PyPI:** https://pypi.org/project/avocet-cp/
-
 ## Install
 - From PyPI (once published):
   ```bash
