@@ -27,3 +27,15 @@ t \ge \langle c_k, w\rangle + q \|w\|_2 \quad\quad \forall k.
 $$
 
 Nominal solves $\min_w \langle \bar{c}, w\rangle$ with mean cost $\bar{c}$.
+
+## `robust_fractional_knapsack.py`
+Fractional knapsack with SBIBM two_moons simulator:
+- Predictor: MLP forecasting item values/weights $(v, w)$ from simulated features $x$.
+- Region: union of L2-balls over sampled value vectors $\mathcal{C}(x) = \bigcup_k \{v : \|v - \hat{v}_k\|_2 \le q\}$; weights fixed to nominal.
+- Optimization (fractional decision $x \in [0,1]^m$, capacity $B$):
+
+$$
+\max_{x} \; \langle v, x\rangle \quad \text{s.t. } \langle w, x\rangle \le B,\; 0 \le x \le 1,
+$$
+
+with a robust variant maximizing the worst-case $\min_{v \in \mathcal{C}(x)} \langle v, x\rangle$ (approximated via worst-case per-item values).

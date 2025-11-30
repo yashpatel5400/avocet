@@ -74,27 +74,6 @@ region = cal.predict_region(x_new)
 print("center:", region.center, "radius:", region.radius)
 ```
 
-## Scenario-based robust decision making
-```python
-import cvxpy as cp
-import numpy as np
-from robbuffet import ScenarioRobustOptimizer, PredictionRegion
-
-# pretend we already calibrated a 2D L2-ball region
-region = PredictionRegion.l2_ball(center=np.array([0.0, 0.0]), radius=0.5)
-
-def objective(w: cp.Variable, theta: np.ndarray):
-    # linear loss that depends on uncertainty theta
-    return cp.sum_squares(w - theta)
-
-def constraints(w: cp.Variable, theta: np.ndarray):
-    return [w >= -1, w <= 1]
-
-optimizer = ScenarioRobustOptimizer(decision_shape=(2,), objective_fn=objective, constraints_fn=constraints, num_samples=256)
-problem = optimizer.build_problem(region, solver="ECOS")
-print("status:", problem.status, "w*:", problem.variables()[0].value)
-```
-
 ## Visualization
 ```python
 from robbuffet import vis
@@ -103,14 +82,14 @@ vis.plot_region_2d(region, grid_limits=((-1, 1), (-1, 1)), resolution=200)
 plt.show()
 ```
 
-## Deterministic closed-form robustification (affine in the uncertainty)
-For linear/affine dependence on the uncertain parameter `theta`, you can avoid sampling and use support functions:
+## Deterministic/analytic robustification (affine in the uncertainty)
+For linear/affine dependence on the uncertain parameter `theta`, you can use support functions directly:
 ```python
 import cvxpy as cp
 import numpy as np
-from robbuffet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
+from robbuffet import L2BallRegion, robustify_affine_leq, robustify_affine_objective
 
-region = PredictionRegion.l2_ball(center=np.array([0.2, -0.1]), radius=0.3)
+region = L2BallRegion(center=np.array([0.2, -0.1]), radius=0.3)
 w = cp.Variable(2)
 
 # Robust constraint: <w, theta> <= 1 for all theta in region
@@ -123,6 +102,32 @@ obj = robustify_affine_objective(base_obj=cp.norm(w, 2), theta_direction=c, regi
 prob = cp.Problem(cp.Minimize(obj), [constr])
 prob.solve(solver="ECOS")
 print(w.value)
+```
+
+## Danskin-based robustification (gradient-based)
+For nonconvex or union regions, use the Danskin optimizer:
+```python
+import numpy as np
+import cvxpy as cp
+from robbuffet import DanskinRobustOptimizer
+from robbuffet.region import UnionRegion, L2BallRegion
+
+# union of two L2 balls
+region = UnionRegion([
+    L2BallRegion(center=np.array([0.5, 0.0]), radius=0.2),
+    L2BallRegion(center=np.array([-0.5, 0.0]), radius=0.2),
+])
+
+def inner(theta_var, w_np):
+    return theta_var @ w_np
+
+def value_and_grad(w_np, theta_np):
+    return float(theta_np @ w_np), np.array(theta_np, dtype=float)
+
+project = lambda w_vec: np.clip(w_vec, -1, 1)
+opt = DanskinRobustOptimizer(region, inner_objective_fn=inner, value_and_grad_fn=value_and_grad, project_fn=project)
+w_star, _ = opt.solve(w0=np.zeros(2), step_size=0.1, max_iters=100)
+print("Danskin w*:", w_star)
 ```
 
 ## Examples
