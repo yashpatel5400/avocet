@@ -160,13 +160,13 @@ def solve_robust(values_centers, radius, weights, capacity):
     return x, worst_case
 
 
-def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
+def run_experiment(alpha=0.1, K=8, n_items=None, capacity=None, seed=0, task_name="gaussian_mixture"):
     if sbibm is None:
         raise ImportError("sbibm is required for this example. Install with `pip install sbibm`.") from _sbibm_import_error
     if flows is None:
         raise ImportError("pyknos/nflows is required. Install with `pip install pyknos sbi`.") from _nflows_import_error
 
-    task = sbibm.get_task("two_moons")
+    task = sbibm.get_task(task_name)
     prior = task.get_prior()
     simulator = task.get_simulator()
 
@@ -177,8 +177,11 @@ def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
     cal_x = simulator(cal_theta)
     test_theta = prior(num_samples=200)
     test_x = simulator(test_theta)
+    theta_dim = train_theta.shape[1]
+    n_items = theta_dim if n_items is None else n_items
+    capacity = float(theta_dim) if capacity is None else float(capacity)
 
-    cache_path = "two_moons_flow.pt"
+    cache_path = f"{task_name}_flow.pt"
     device = torch.device("cpu")
     if os.path.exists(cache_path):
         flow = torch.load(cache_path, map_location=device)
@@ -224,12 +227,28 @@ def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
     alphas = np.linspace(0.05, 0.5, num=10)
     coverages = [float(np.mean(test_scores <= conformal_quantile(torch.tensor(cal_scores), a))) for a in alphas]
 
+    # Plot calibration curve
+    import matplotlib.pyplot as plt
+
+    one_minus = 1 - alphas
+    plt.figure()
+    plt.plot(one_minus, coverages, marker="o", label="GPCP")
+    plt.plot(one_minus, one_minus, linestyle="--", color="gray", label="target")
+    plt.xlabel(r"$1 - \alpha$")
+    plt.ylabel("coverage")
+    plt.title("Calibration curve (fractional knapsack)")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("fractional_knapsack_calibration_curve.png", dpi=150)
+    plt.close()
+    print("Saved fractional_knapsack_calibration_curve.png")
+
     # Evaluate on first test point
     x_test, y_test = test_ds.tensors
     x0 = x_test[0:1]
     y0 = y_test[0].numpy()
-    values_true = y0[:n_items]
-    weights_true = np.abs(values_true) + 0.5
+    values_true = np.abs(y0[:n_items])
+    # weights_true = np.abs(values_true) + 0.5
 
     region = calibrator.predict_region(x0)
     centers = np.stack([r.center for r in region.as_union()])
@@ -242,6 +261,9 @@ def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
     # Robust and nominal solutions
     x_nom, nominal_obj_pred = solve_nominal(values_pred, weights_pred, capacity)
     x_rob, robust_obj_pred = solve_robust(centers[:, :n_items], radius, weights_pred, capacity)
+
+    print("x_nom: ", x_nom)
+    print("x_rob: ", x_rob)
 
     true_nominal_obj = float(values_true @ x_nom)
     true_robust_obj = float(values_true @ x_rob)
@@ -270,7 +292,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--K", type=int, default=8)
-    parser.add_argument("--n-items", type=int, default=10)
-    parser.add_argument("--capacity", type=float, default=5.0)
+    parser.add_argument("--n-items", type=int, default=None)
+    parser.add_argument("--capacity", type=float, default=None)
+    parser.add_argument("--task", type=str, default="gaussian_linear", help="SBIBM task name")
     args = parser.parse_args()
-    run_experiment(alpha=args.alpha, K=args.K, n_items=args.n_items, capacity=args.capacity)
+    run_experiment(
+        alpha=args.alpha,
+        K=args.K,
+        n_items=args.n_items,
+        capacity=args.capacity,
+        task_name=args.task,
+    )
