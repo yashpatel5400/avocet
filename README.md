@@ -109,11 +109,11 @@ print(w.value)
 ```
 
 ## Examples
-- `examples/robust_supply_planning.py` — end-to-end: train + conformalize predictor, plot calibration curve, solve robust planning.
+- `examples/robust_portfolio.py` — conformalized predictor + robust portfolio over synthetic asset returns.
 - `examples/robust_shortest_path.py` — generative predictor + union-of-balls region for robust shortest path.
 - `examples/robust_bike_newsvendor.py` — conformal calibration on UCI Bike Sharing demand + robust newsvendor decisions.
 
-Run with `python examples/robust_supply_planning.py` (similar for others).
+Run with `python examples/robust_portfolio.py` (similar for others).
 
 ## Extending
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.
