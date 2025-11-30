@@ -25,7 +25,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from robbuffet import SplitConformalCalibrator, vis
+from robbuffet import DanskinRobustOptimizer, SplitConformalCalibrator, vis
 from robbuffet.region import L2BallRegion, UnionRegion
 from robbuffet.scores import GPCPScore, conformal_quantile
 
@@ -155,11 +155,6 @@ def feasibility_report(A: np.ndarray, b: np.ndarray, w: np.ndarray) -> str:
     return f"residual={res:.2e}, min={w.min():.3f}, max={w.max():.3f}"
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
 def run_experiment(
     alpha: float = 0.1,
     K: int = 8,
@@ -168,6 +163,7 @@ def run_experiment(
     predictions: str = "examples/DCRNN_PyTorch/data/dcrnn_predictions_pytorch.npz",
     source: int = 0,
     target: int = 10,
+    use_danskin: bool = False,
 ):
     dcrnn_root = os.path.abspath(dcrnn_root)
     adj_path = os.path.abspath(adj)
@@ -252,7 +248,41 @@ def run_experiment(
     mean_pred_edges = node_costs_to_edges(mean_pred_nodes, edges)
 
     # Robust vs nominal
-    w_robust, status_r = robust_shortest_path(A, b, centers_edges, radius, base_cost=np.ones_like(mean_pred_edges))
+    if use_danskin:
+        l2_regions = [L2BallRegion(center=c, radius=radius) for c in centers_edges]
+        union_region = UnionRegion(l2_regions)
+
+        def inner_obj(theta_var, w_np):
+            return theta_var @ w_np
+
+        def value_and_grad(w_np, theta_np):
+            return float(theta_np @ w_np), np.array(theta_np, dtype=float)
+
+        # Project w onto flow constraints
+        def project_flow(w_vec):
+            E = A.shape[1]
+            w_var = cp.Variable(E)
+            prob = cp.Problem(cp.Minimize(cp.sum_squares(w_var - w_vec)), [A @ w_var == b, w_var >= 0, w_var <= 1])
+            for solver in [cp.CLARABEL, cp.ECOS, None]:
+                try:
+                    prob.solve(solver=solver)
+                except Exception:
+                    continue
+                if w_var.value is not None:
+                    return w_var.value
+            return w_vec
+
+        w0 = mean_pred_edges
+        danskin_opt = DanskinRobustOptimizer(
+            region=union_region,
+            inner_objective_fn=inner_obj,
+            value_and_grad_fn=value_and_grad,
+            project_fn=project_flow,
+        )
+        w_robust, _ = danskin_opt.solve(w0=np.asarray(w0).reshape(-1), step_size=0.1, max_iters=200)
+        status_r = "danskin"
+    else:
+        w_robust, status_r = robust_shortest_path(A, b, centers_edges, radius, base_cost=np.ones_like(mean_pred_edges))
     w_nom, status_n = nominal_shortest_path(A, b, mean_pred_edges)
 
     if w_robust is None:
@@ -317,6 +347,7 @@ if __name__ == "__main__":
     parser.add_argument("--K", type=int, default=8)
     parser.add_argument("--source", type=int, default=0)
     parser.add_argument("--target", type=int, default=10)
+    parser.add_argument("--use-danskin", action="store_true", help="Use Danskin gradient-based robust optimizer")
     args = parser.parse_args()
     run_experiment(
         alpha=args.alpha,
@@ -326,4 +357,5 @@ if __name__ == "__main__":
         predictions=args.predictions,
         source=args.source,
         target=args.target,
+        use_danskin=args.use_danskin,
     )

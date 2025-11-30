@@ -72,27 +72,6 @@ class PredictionRegion(abc.ABC):
         """Support function h_R(direction) = max_{theta in R} <direction, theta>."""
         ...
 
-    @staticmethod
-    def l2_ball(center: np.ndarray, radius: float) -> "PredictionRegion":
-        return L2BallRegion(center=center, radius=radius)
-
-    @staticmethod
-    def l1_ball(center: np.ndarray, radius: float) -> "PredictionRegion":
-        return L1BallRegion(center=center, radius=radius)
-
-    @staticmethod
-    def linf_ball(center: np.ndarray, radius: float) -> "PredictionRegion":
-        return LinfBallRegion(center=center, radius=radius)
-
-    @staticmethod
-    def ellipsoid(center: np.ndarray, shape_matrix: np.ndarray, radius: float = 1.0) -> "PredictionRegion":
-        return EllipsoidRegion(center=center, shape_matrix=shape_matrix, radius=radius)
-
-    @staticmethod
-    def union(regions: Sequence["PredictionRegion"]) -> "PredictionRegion":
-        return UnionRegion(list(regions))
-
-
 class L2BallRegion(PredictionRegion):
     def __init__(self, center: np.ndarray, radius: float):
         self.center = center
