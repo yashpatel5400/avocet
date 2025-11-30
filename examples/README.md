@@ -9,7 +9,7 @@ Bike rental demand (UCI Bike Sharing) with robust newsvendor:
 - Optimization:
 
 $$
-\min_{q \ge 0} \max_{c \in C(x)} \; c_u\,\max(c - q, 0) + c_o\,\max(q - c, 0).
+\min_{q \ge 0} \max_{c \in C(x)} \quad c_u\,\max(c - q, 0) + c_o\,\max(q - c, 0).
 $$
 
 We solve the inner max over interval endpoints and compare to the nominal plug-in $q = \hat{y}(x)$.
@@ -21,9 +21,9 @@ Robust shortest path on METR-LA with conformalized DCRNN forecasts:
 - Optimization (flow vector $w$, incidence $A$, supply $b$):
 
 $$
-\min_{w} \; t \quad
-\text{s.t. } A w = b,\; 0 \le w \le 1,\;
-t \ge \langle c_k, w\rangle + q \|w\|_2 \;\; \forall k.
+\min_{w} \quad t \quad
+\text{s.t. } A w = b,\quad 0 \le w \le 1,\quad
+t \ge \langle c_k, w\rangle + q \|w\|_2 \quad\quad \forall k.
 $$
 
 Nominal solves $\min_w \langle \bar{c}, w\rangle$ with mean cost $\bar{c}$.
