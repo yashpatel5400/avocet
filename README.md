@@ -23,6 +23,16 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
   pip install -e .[dev]
   ```
 
+## Submodules
+This repo uses the DCRNN submodule for the METR-LA shortest-path example. Clone with:
+```bash
+git clone --recurse-submodules https://github.com/yashpatel5400/avocet
+```
+or, if already cloned:
+```bash
+git submodule update --init --recursive
+```
+
 ## What this package does
 - Calibrate PyTorch predictors with split conformal prediction and geometry-aware score functions.
 - Produce prediction regions (convex or unions) that can be sampled, visualized (1D/2D), or passed to downstream optimizers.

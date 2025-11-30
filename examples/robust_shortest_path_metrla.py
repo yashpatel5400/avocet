@@ -136,10 +136,10 @@ def robust_shortest_path(A, b, centers_costs, radius_cost, base_cost):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dcrnn-root", type=str, required=True, help="Path to cloned DCRNN repo")
-    parser.add_argument("--ckpt", type=str, required=True, help="Path to DCRNN METR-LA checkpoint (ckpt file)")
-    parser.add_argument("--adj", type=str, default="data/adj_mx.pkl", help="Path to adj_mx.pkl")
-    parser.add_argument("--metr", type=str, default="data/metr-la.h5", help="Path to metr-la.h5")
+    parser.add_argument("--dcrnn-root", type=str, default="examples/DCRNN", help="Path to cloned DCRNN repo")
+    parser.add_argument("--ckpt", type=str, default="examples/DCRNN/models/pretrained/LA/best_model.ckpt", help="Path to DCRNN METR-LA checkpoint (ckpt file)")
+    parser.add_argument("--adj", type=str, default="examples/DCRNN/data/sensor_graph/adj_mx.pkl", help="Path to adj_mx.pkl")
+    parser.add_argument("--metr", type=str, default="examples/DCRNN/data/metr-la.h5", help="Path to metr-la.h5")
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--K", type=int, default=8)
     parser.add_argument("--source", type=int, default=0)
