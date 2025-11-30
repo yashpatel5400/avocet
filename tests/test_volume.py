@@ -1,6 +1,6 @@
 import numpy as np
 
-from avocet import L1BallRegion, L2BallRegion, LinfBallRegion, EllipsoidRegion
+from robbuffet import L1BallRegion, L2BallRegion, LinfBallRegion, EllipsoidRegion
 
 
 def test_exact_volumes():

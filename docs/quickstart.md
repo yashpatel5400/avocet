@@ -9,7 +9,7 @@ pip install -e .[dev]
 ```python
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from avocet import L2Score, SplitConformalCalibrator
+from robbuffet import L2Score, SplitConformalCalibrator
 
 model = torch.nn.Linear(2, 2)
 x_cal = torch.randn(200, 2)
@@ -29,7 +29,7 @@ print("center:", region.center, "radius:", region.radius)
 ```python
 import cvxpy as cp
 import numpy as np
-from avocet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
+from robbuffet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
 
 region = PredictionRegion.l2_ball(center=np.array([0.0, 0.0]), radius=0.5)
 w = cp.Variable(2)
@@ -46,7 +46,7 @@ print("w*:", w.value)
 ```python
 import cvxpy as cp
 import numpy as np
-from avocet import ScenarioRobustOptimizer, PredictionRegion
+from robbuffet import ScenarioRobustOptimizer, PredictionRegion
 
 region = PredictionRegion.l1_ball(center=np.array([0.0, 0.0]), radius=0.5)
 
@@ -64,7 +64,7 @@ print("status:", prob.status, "w*:", prob.variables()[0].value)
 ## Visualization (2D region)
 ```python
 import matplotlib.pyplot as plt
-from avocet import vis
+from robbuffet import vis
 vis.plot_region_2d(region, grid_limits=((-1, 1), (-1, 1)), resolution=200)
 plt.show()
 ```

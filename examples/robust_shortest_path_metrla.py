@@ -25,9 +25,9 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from avocet import DanskinRobustOptimizer, SplitConformalCalibrator, vis
-from avocet.region import L2BallRegion, UnionRegion
-from avocet.scores import GPCPScore, conformal_quantile
+from robbuffet import DanskinRobustOptimizer, SplitConformalCalibrator, vis
+from robbuffet.region import L2BallRegion, UnionRegion
+from robbuffet.scores import GPCPScore, conformal_quantile
 
 
 # ---------------------------------------------------------------------------

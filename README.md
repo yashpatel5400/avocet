@@ -1,9 +1,9 @@
-# <img src="logo.png" alt="Avocet logo" width="64" height="64" style="vertical-align:middle; margin-right:8px;" /> avocet-cp
+# <img src="logo.png" alt="Avocet logo" width="64" height="64" style="vertical-align:middle; margin-right:8px;" /> robbuffet
 
 [![PyPI](https://img.shields.io/pypi/v/avocet-cp.svg)](https://pypi.org/project/avocet-cp/)
 [![Python](https://img.shields.io/pypi/pyversions/avocet-cp.svg)](https://pypi.org/project/avocet-cp/)
-[![CI](https://github.com/yashpatel5400/avocet/actions/workflows/ci.yml/badge.svg)](https://github.com/yashpatel5400/avocet/actions/workflows/ci.yml)
-[![Docs](https://github.com/yashpatel5400/avocet/actions/workflows/docs.yml/badge.svg)](https://ypatel.io/avocet/)
+[![CI](https://github.com/yashpatel5400/robbuffet/actions/workflows/ci.yml/badge.svg)](https://github.com/yashpatel5400/robbuffet/actions/workflows/ci.yml)
+[![Docs](https://github.com/yashpatel5400/robbuffet/actions/workflows/docs.yml/badge.svg)](https://ypatel.io/robbuffet/)
 
 Conformal prediction + robust decision making with PyTorch predictors and CVXPY optimizers.
 
@@ -14,8 +14,8 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
   ```
 - From source:
   ```bash
-  git clone https://github.com/yashpatel5400/avocet
-  cd avocet
+  git clone https://github.com/yashpatel5400/robbuffet
+  cd robbuffet
   pip install .
   ```
 - Editable + dev extras:
@@ -26,7 +26,7 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
 ## Submodules
 This repo uses the `DCRNN_PyTorch` submodule for the METR-LA shortest-path example. Clone with:
 ```bash
-git clone --recurse-submodules https://github.com/yashpatel5400/avocet
+git clone --recurse-submodules https://github.com/yashpatel5400/robbuffet
 ```
 or, if already cloned:
 ```bash
@@ -55,7 +55,7 @@ Supported scores/geometries with closed-form robustification:
 ```python
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from avocet import L2Score, SplitConformalCalibrator
+from robbuffet import L2Score, SplitConformalCalibrator
 
 # toy predictor
 model = torch.nn.Linear(2, 2)
@@ -78,7 +78,7 @@ print("center:", region.center, "radius:", region.radius)
 ```python
 import cvxpy as cp
 import numpy as np
-from avocet import ScenarioRobustOptimizer, PredictionRegion
+from robbuffet import ScenarioRobustOptimizer, PredictionRegion
 
 # pretend we already calibrated a 2D L2-ball region
 region = PredictionRegion.l2_ball(center=np.array([0.0, 0.0]), radius=0.5)
@@ -97,7 +97,7 @@ print("status:", problem.status, "w*:", problem.variables()[0].value)
 
 ## Visualization
 ```python
-from avocet import vis
+from robbuffet import vis
 import matplotlib.pyplot as plt
 vis.plot_region_2d(region, grid_limits=((-1, 1), (-1, 1)), resolution=200)
 plt.show()
@@ -108,7 +108,7 @@ For linear/affine dependence on the uncertain parameter `theta`, you can avoid s
 ```python
 import cvxpy as cp
 import numpy as np
-from avocet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
+from robbuffet import PredictionRegion, robustify_affine_leq, robustify_affine_objective
 
 region = PredictionRegion.l2_ball(center=np.array([0.2, -0.1]), radius=0.3)
 w = cp.Variable(2)
@@ -153,10 +153,10 @@ Please open issues for bugs/feature requests and PRs for fixes/additions. See CO
 ## Citation
 If you use Avocet in academic work, please cite:
 ```
-@software{avocet,
-  title = {Avocet: Conformal prediction and robust decision making},
+@software{robbuffet,
+  title = {Robbuffet: Conformal prediction and robust decision making},
   author = {Yash Patel},
   year = {2025},
-  url = {https://github.com/yashpatel5400/avocet}
+  url = {https://github.com/yashpatel5400/robbuffet}
 }
 ```

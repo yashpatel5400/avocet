@@ -1,6 +1,6 @@
 import numpy as np
 
-from avocet.region import L2BallRegion, L1BallRegion, LinfBallRegion, EllipsoidRegion
+from robbuffet.region import L2BallRegion, L1BallRegion, LinfBallRegion, EllipsoidRegion
 
 
 def test_l2_contains_and_sample():

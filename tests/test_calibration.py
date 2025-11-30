@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from avocet import L2Score, SplitConformalCalibrator
+from robbuffet import L2Score, SplitConformalCalibrator
 
 
 def test_split_conformal_calibration():

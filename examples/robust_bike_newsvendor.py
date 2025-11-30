@@ -21,8 +21,8 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from avocet import L2Score, SplitConformalCalibrator, PredictionRegion, vis
-from avocet.scores import conformal_quantile
+from robbuffet import L2Score, SplitConformalCalibrator, PredictionRegion, vis
+from robbuffet.scores import conformal_quantile
 
 
 DATA_PATH = Path("data/day.csv")

@@ -1,7 +1,7 @@
 import cvxpy as cp
 import numpy as np
 
-from avocet import (
+from robbuffet import (
     PredictionRegion,
     robustify_affine_leq,
     support_function,

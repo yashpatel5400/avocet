@@ -6,7 +6,7 @@
    python -m pip install --upgrade build twine
    python -m build
    ```
-   This creates `dist/avocet-*.tar.gz` and `dist/avocet-*.whl`.
+   This creates `dist/robbuffet-*.tar.gz` and `dist/robbuffet-*.whl`.
 3. Upload to PyPI:
    ```bash
    twine upload dist/*
