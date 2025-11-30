@@ -13,7 +13,7 @@
    ```
 4. Verify install:
    ```bash
-   pip install --no-cache-dir avocet-cp
+   pip install --no-cache-dir robbuffet
    ```
 
 For TestPyPI, replace the upload command with:

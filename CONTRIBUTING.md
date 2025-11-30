@@ -1,6 +1,6 @@
-# Contributing to Avocet
+# Contributing to Robbuffet
 
-Thanks for your interest in improving Avocet!
+Thanks for your interest in improving Robbuffet!
 
 ## How to contribute
 - **Issues:** File an issue describing bugs or feature requests. Include repro steps, versions, and expected vs actual behavior.

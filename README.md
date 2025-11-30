@@ -1,7 +1,7 @@
-# <img src="logo.png" alt="Avocet logo" width="48" height="64" style="vertical-align:middle; margin-right:8px;" /> robbuffet
+# <img src="logo.png" alt="Robbuffet logo" width="48" height="64" style="vertical-align:middle; margin-right:8px;" /> robbuffet
 
-[![PyPI](https://img.shields.io/pypi/v/avocet-cp.svg)](https://pypi.org/project/avocet-cp/)
-[![Python](https://img.shields.io/pypi/pyversions/avocet-cp.svg)](https://pypi.org/project/avocet-cp/)
+[![PyPI](https://img.shields.io/pypi/v/robbuffet.svg)](https://pypi.org/project/robbuffet/)
+[![Python](https://img.shields.io/pypi/pyversions/robbuffet.svg)](https://pypi.org/project/robbuffet/)
 [![CI](https://github.com/yashpatel5400/robbuffet/actions/workflows/ci.yml/badge.svg)](https://github.com/yashpatel5400/robbuffet/actions/workflows/ci.yml)
 [![Docs](https://github.com/yashpatel5400/robbuffet/actions/workflows/docs.yml/badge.svg)](https://ypatel.io/robbuffet/)
 
@@ -10,7 +10,7 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
 ## Install
 - From PyPI (once published):
   ```bash
-  pip install avocet-cp
+  pip install robbuffet
   ```
 - From source:
   ```bash
@@ -151,7 +151,7 @@ Outputs mean/std and a paired t-test (robust < nominal) when scipy is available.
 Please open issues for bugs/feature requests and PRs for fixes/additions. See CONTRIBUTING.md for guidelines.
 
 ## Citation
-If you use Avocet in academic work, please cite:
+If you use Robbuffet in academic work, please cite:
 ```
 @software{robbuffet,
   title = {Robbuffet: Conformal prediction and robust decision making},

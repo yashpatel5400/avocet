@@ -1,4 +1,4 @@
-# Avocet
+# Robbuffet
 
 Conformal prediction + robust decision making with PyTorch predictors and CVXPY optimizers.
 

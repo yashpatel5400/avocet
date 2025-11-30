@@ -1,5 +1,5 @@
 """
-Avocet: Conformal prediction and robust decision-making toolkit.
+Robbuffet: Conformal prediction and robust decision-making toolkit.
 
 Exposes:
 - ScoreFunction implementations and geometry-aware PredictionRegion classes.
