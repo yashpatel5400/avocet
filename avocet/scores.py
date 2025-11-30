@@ -44,6 +44,10 @@ class L2Score(ScoreFunction):
         return "l2"
 
     def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        if prediction.dim() == 1:
+            prediction = prediction.unsqueeze(-1)
+        if target.dim() == 1:
+            target = target.unsqueeze(-1)
         return torch.norm(prediction - target, p=2, dim=-1)
 
     def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
@@ -64,6 +68,10 @@ class L1Score(ScoreFunction):
         return "l1"
 
     def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        if prediction.dim() == 1:
+            prediction = prediction.unsqueeze(-1)
+        if target.dim() == 1:
+            target = target.unsqueeze(-1)
         return torch.norm(prediction - target, p=1, dim=-1)
 
     def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
@@ -84,6 +92,10 @@ class LinfScore(ScoreFunction):
         return "linf"
 
     def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        if prediction.dim() == 1:
+            prediction = prediction.unsqueeze(-1)
+        if target.dim() == 1:
+            target = target.unsqueeze(-1)
         return torch.norm(prediction - target, p=float("inf"), dim=-1)
 
     def build_region(self, prediction: torch.Tensor, quantile: float) -> PredictionRegion:
@@ -109,7 +121,12 @@ class MahalanobisScore(ScoreFunction):
         return "mahalanobis"
 
     def score(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        diff = prediction - target
+        diff = prediction
+        if diff.dim() == 1:
+            diff = diff.unsqueeze(-1)
+        if target.dim() == 1:
+            target = target.unsqueeze(-1)
+        diff = diff - target
         w = torch.as_tensor(self.weight, device=diff.device, dtype=diff.dtype)
         # batch quadratic form
         return torch.sqrt(torch.einsum("bi,ij,bj->b", diff, w, diff))

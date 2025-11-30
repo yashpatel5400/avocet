@@ -20,6 +20,7 @@ from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from avocet import L2Score, SplitConformalCalibrator, PredictionRegion
+from avocet.scores import conformal_quantile
 
 
 DATA_PATH = Path("data/day.csv")
@@ -75,7 +76,7 @@ def calibration_curve(model, score_fn, x_cal, y_cal, x_test, y_test, alphas):
     coverages = []
     quantiles = []
     for alpha in alphas:
-        q = np.quantile(cal_scores.numpy(), 1 - alpha)
+        q = conformal_quantile(cal_scores, alpha)
         quantiles.append(q)
         cov = float(np.mean(residuals <= q))
         coverages.append(cov)
@@ -140,10 +141,11 @@ def main():
 
     alphas = np.linspace(0.05, 0.5, 10)
     coverages, quantiles = calibration_curve(model, score_fn, x_cal_t, y_cal_t, x_test_t, y_test_t, alphas)
+    x_axis = 1 - alphas
     plt.figure()
-    plt.plot(alphas, coverages, marker="o", label="empirical coverage")
-    plt.plot(alphas, 1 - alphas, "--", label="target 1-alpha")
-    plt.xlabel("alpha")
+    plt.plot(x_axis, coverages, marker="o", label="empirical coverage")
+    plt.plot(x_axis, x_axis, "--", label="target coverage")
+    plt.xlabel("1 - alpha")
     plt.ylabel("coverage on test")
     plt.title("Calibration curve (Bike Sharing)")
     plt.legend()
