@@ -77,45 +77,6 @@ class OfflineDataset(BaseDataset):
         return self._test
 
 
-class GeneratorDataset(BaseDataset):
-    """
-    Dataset wrapper around callables producing TensorDatasets for each split.
-
-    Provide functions train_fn(), cal_fn(), test_fn() that return TensorDataset.
-    """
-
-    def __init__(
-        self,
-        train_fn: Callable[[], TensorDataset],
-        cal_fn: Callable[[], TensorDataset],
-        test_fn: Callable[[], TensorDataset],
-    ):
-        self._train_fn = train_fn
-        self._cal_fn = cal_fn
-        self._test_fn = test_fn
-        self._train: Optional[TensorDataset] = None
-        self._cal: Optional[TensorDataset] = None
-        self._test: Optional[TensorDataset] = None
-
-    @property
-    def train(self) -> TensorDataset:
-        if self._train is None:
-            self._train = self._train_fn()
-        return self._train
-
-    @property
-    def calibration(self) -> TensorDataset:
-        if self._cal is None:
-            self._cal = self._cal_fn()
-        return self._cal
-
-    @property
-    def test(self) -> TensorDataset:
-        if self._test is None:
-            self._test = self._test_fn()
-        return self._test
-
-
 class SimulationDataset(BaseDataset):
     """
     Dataset generated on the fly via simulators:
@@ -146,9 +107,9 @@ class SimulationDataset(BaseDataset):
 
     def _generate(self, n: int) -> TensorDataset:
         X = self.x_sampler(n, self.rng)
-        X_t = torch.as_tensor(X)
+        X_t = torch.tensor(X, dtype=torch.float32)
         Y = self.y_sampler(X, self.rng)
-        Y_t = torch.as_tensor(Y)
+        Y_t = torch.tensor(Y, dtype=torch.float32)
         return TensorDataset(X_t, Y_t)
 
     @property
