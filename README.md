@@ -24,7 +24,7 @@ Conformal prediction + robust decision making with PyTorch predictors and CVXPY 
   ```
 
 ## Submodules
-This repo uses the DCRNN submodule for the METR-LA shortest-path example. Clone with:
+This repo uses the `DCRNN_PyTorch` submodule for the METR-LA shortest-path example. Clone with:
 ```bash
 git clone --recurse-submodules https://github.com/yashpatel5400/avocet
 ```
@@ -32,6 +32,13 @@ or, if already cloned:
 ```bash
 git submodule update --init --recursive
 ```
+For the METR-LA example, generate predictions via:
+```bash
+cd examples/DCRNN_PyTorch
+python run_demo_pytorch.py --config_filename=data/model/pretrained/METR-LA/config.yaml
+cd ../..
+```
+This writes `data/dcrnn_predictions_pytorch.npz` that the example consumes.
 
 ## What this package does
 - Calibrate PyTorch predictors with split conformal prediction and geometry-aware score functions.
@@ -119,11 +126,10 @@ print(w.value)
 ```
 
 ## Examples
-- `examples/robust_portfolio.py` — conformalized predictor + robust portfolio over synthetic asset returns.
-- `examples/robust_shortest_path_metrla.py` — robust shortest path on METR-LA with conformalized DCRNN forecasts.
+- `examples/robust_shortest_path_metrla.py` — robust shortest path on METR-LA with conformalized DCRNN_PyTorch forecasts (needs `examples/DCRNN_PyTorch` submodule + predictions NPZ).
 - `examples/robust_bike_newsvendor.py` — conformal calibration on UCI Bike Sharing demand + robust newsvendor decisions.
 
-Run with `python examples/robust_portfolio.py` (similar for others).
+Run with `python examples/<script>.py`. The METR-LA script assumes you have generated `examples/DCRNN_PyTorch/data/dcrnn_predictions_pytorch.npz` (see Submodules above).
 
 ## Extending
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.
