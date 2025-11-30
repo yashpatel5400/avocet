@@ -1,3 +1,6 @@
 [submodule "examples/DCRNN"]
 	path = examples/DCRNN
 	url = https://github.com/liyaguang/DCRNN
+[submodule "examples/DCRNN_PyTorch"]
+	path = examples/DCRNN_PyTorch
+	url = https://github.com/liyaguang/DCRNN_PyTorch

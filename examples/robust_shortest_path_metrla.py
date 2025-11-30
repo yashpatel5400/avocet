@@ -2,16 +2,15 @@
 Robust shortest path on the METR-LA traffic network with conformalized DCRNN predictions.
 
 Pipeline:
-- Load METR-LA graph (adjacency) and speed data (METR-LA).
-- Use the DCRNN model (Liyaguang/DCRNN, pre-trained weights) to forecast future speeds.
-  Attribution: https://github.com/liyaguang/DCRNN
+- Load METR-LA graph (adjacency) and precomputed DCRNN_PyTorch forecasts.
+- Use the DCRNN model (https://github.com/chnsh/DCRNN_PyTorch) as the traffic predictor.
 - Treat speed forecasts as a generative model: sample K trajectories by adding calibrated noise.
 - Conformalize with a GPCP score to get a union-of-balls region over edge costs.
 - Solve robust vs nominal shortest-path flows; visualize calibration and flows.
 
 Requirements:
-- Clone https://github.com/liyaguang/DCRNN and install its dependencies (TensorFlow 1.x).
-- Provide paths to METR-LA data and the pre-trained checkpoint (see DCRNN repo releases).
+- Clone https://github.com/chnsh/DCRNN_PyTorch (we vendor it under examples/DCRNN_PyTorch).
+- Have a precomputed predictions NPZ (run_demo_pytorch.py writes one at data/dcrnn_predictions_pytorch.npz).
 """
 
 import argparse
@@ -47,22 +46,6 @@ def build_graph_from_adj(adj_mx: np.ndarray) -> Tuple[nx.DiGraph, list]:
     return G, edges
 
 
-def maybe_download_metrla(h5_path: str):
-    if os.path.exists(h5_path):
-        return
-    os.makedirs(os.path.dirname(h5_path), exist_ok=True)
-    file_id = "1pAGRfzMx6K9WWsfDcD1NMbIif0T0saFC"
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    try:
-        import urllib.request
-
-        print(f"Downloading METR-LA data to {h5_path} ...")
-        urllib.request.urlretrieve(url, h5_path)
-        print("Download complete.")
-    except Exception as e:
-        raise RuntimeError(f"Failed to download METR-LA data to {h5_path}. Please download manually from {url}") from e
-
-
 def maybe_generate_adj(dcrnn_root: str, adj_path: str):
     if os.path.exists(adj_path):
         return
@@ -85,85 +68,30 @@ def maybe_generate_adj(dcrnn_root: str, adj_path: str):
         raise RuntimeError(f"Failed to generate adj_mx.pkl at {adj_path}") from e
 
 
-def maybe_generate_dataset(dcrnn_root: str, metr_path: str, dataset_dir: str):
-    """
-    Use DCRNN's generate_training_data.py to create train/val/test NPZ splits
-    that the library utilities expect.
-    """
-    train_npz = os.path.join(dataset_dir, "train.npz")
-    if os.path.exists(train_npz):
-        return
-    os.makedirs(dataset_dir, exist_ok=True)
-    try:
-        import subprocess
-
-        cmd = [
-            "python",
-            "scripts/generate_training_data.py",
-            f"--output_dir={dataset_dir}",
-            f"--traffic_df_filename={metr_path}",
-        ]
-        subprocess.run(cmd, check=True, cwd=dcrnn_root)
-    except Exception as e:
-        raise RuntimeError(f"Failed to generate train/val/test splits at {dataset_dir}") from e
-
-
 # ---------------------------------------------------------------------------
-# DCRNN inference wrapper (expects DCRNN repo available)
+# DCRNN inference wrapper (expects DCRNN PyTorch repo available)
 # ---------------------------------------------------------------------------
 
 
-def dcrnn_val_test_predictions(
-    dcrnn_root: str, ckpt_prefix: str, adj_path: str, dataset_dir: str
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def load_predictions(npz_path: str) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Load the pre-trained DCRNN and return (val_pred, val_true, test_pred, test_true)
-    for horizon-1 forecasts, all in original speed units.
+    Load precomputed DCRNN predictions/truth from npz produced by run_demo_pytorch.
+    Returns (pred, truth) for horizon 1 with shape (T, N).
     """
-    import sys
-    import tensorflow as tf
-    import yaml
-
-    sys.path.append(dcrnn_root)
-    from lib.utils import load_graph_data
-    from model.dcrnn_supervisor import DCRNNSupervisor
-
-    config_path = os.path.join(dcrnn_root, "data/model/pretrained/METR-LA/config.yaml")
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
-    # Point to local data/paths.
-    config["data"]["dataset_dir"] = dataset_dir
-    config["data"]["graph_pkl_filename"] = adj_path
-    config["train"]["model_filename"] = ckpt_prefix
-
-    _, _, adj_mx = load_graph_data(adj_path)
-
-    tf_config = tf.ConfigProto()
-    tf_config.gpu_options.allow_growth = True
-    tf_config.log_device_placement = False
-
-    def _predict_split(sess, supervisor, split: str):
-        loader = supervisor._data[f"{split}_loader"]
-        y_true = supervisor._data[f"y_{split}"]
-        res = supervisor.run_epoch_generator(
-            sess,
-            supervisor._test_model,
-            loader.get_iterator(),
-            return_output=True,
-            training=False,
-        )
-        y_preds = np.concatenate(res["outputs"], axis=0)  # (B, horizon, N, 1)
-        scaler = supervisor._data["scaler"]
-        preds_inv = scaler.inverse_transform(y_preds[: y_true.shape[0], 0, :, 0])
-        truth_inv = scaler.inverse_transform(y_true[:, 0, :, 0])
-        return preds_inv, truth_inv
-
-    with tf.Session(config=tf_config) as sess:
-        supervisor = DCRNNSupervisor(adj_mx=adj_mx, **config)
-        supervisor.load(sess, ckpt_prefix)
-        val_pred, val_true = _predict_split(sess, supervisor, "val")
-        test_pred, test_true = _predict_split(sess, supervisor, "test")
-    return val_pred, val_true, test_pred, test_true
+    data = np.load(npz_path, allow_pickle=True)
+    preds = data["prediction"]
+    truth = data["truth"]
+    # Arrays are lists over horizon; take first step
+    pred_h1 = np.array(preds[0])
+    truth_h1 = np.array(truth[0])
+    # Ensure shapes (T, N)
+    if pred_h1.ndim == 3:
+        pred_h1 = pred_h1[:, :, 0]
+        truth_h1 = truth_h1[:, :, 0]
+    if pred_h1.ndim == 1:
+        pred_h1 = pred_h1[:, None]
+        truth_h1 = truth_h1[:, None]
+    return pred_h1, truth_h1
 
 
 # ---------------------------------------------------------------------------
@@ -228,11 +156,9 @@ def node_costs_to_edges(node_costs: np.ndarray, edges: list) -> np.ndarray:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dcrnn-root", type=str, default="examples/DCRNN", help="Path to cloned DCRNN repo")
-    parser.add_argument("--ckpt", type=str, default="examples/DCRNN/data/model/pretrained/METR-LA/models-2.7422-24375", help="Path prefix to DCRNN METR-LA checkpoint (without extension)")
-    parser.add_argument("--adj", type=str, default="examples/DCRNN/data/sensor_graph/adj_mx.pkl", help="Path to adj_mx.pkl")
-    parser.add_argument("--metr", type=str, default="examples/DCRNN/data/metr-la.h5", help="Path to metr-la.h5")
-    parser.add_argument("--dataset-dir", type=str, default="examples/DCRNN/data/METR-LA", help="Directory with DCRNN train/val/test NPZ files")
+    parser.add_argument("--dcrnn-root", type=str, default="examples/DCRNN_PyTorch", help="Path to cloned DCRNN_PyTorch repo")
+    parser.add_argument("--adj", type=str, default="examples/DCRNN_PyTorch/data/sensor_graph/adj_mx.pkl", help="Path to adj_mx.pkl")
+    parser.add_argument("--predictions", type=str, default="examples/DCRNN_PyTorch/data/dcrnn_predictions_pytorch.npz", help="NPZ containing precomputed predictions/truth from run_demo_pytorch.py")
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--K", type=int, default=8)
     parser.add_argument("--source", type=int, default=0)
@@ -241,13 +167,9 @@ def main():
 
     dcrnn_root = os.path.abspath(args.dcrnn_root)
     adj_path = os.path.abspath(args.adj)
-    metr_path = os.path.abspath(args.metr)
-    dataset_dir = os.path.abspath(args.dataset_dir)
-    ckpt_prefix = os.path.abspath(args.ckpt)
+    pred_path = os.path.abspath(args.predictions)
 
     maybe_generate_adj(dcrnn_root, adj_path)
-    maybe_download_metrla(metr_path)
-    maybe_generate_dataset(dcrnn_root, metr_path, dataset_dir)
 
     sys.path.append(dcrnn_root)
     from lib.utils import load_graph_data
@@ -259,16 +181,22 @@ def main():
     b[args.source] = 1.0
     b[args.target] = -1.0
 
-    # DCRNN predictions (speed) on val/test splits
-    val_pred, val_true, test_pred, test_true = dcrnn_val_test_predictions(
-        dcrnn_root, ckpt_prefix, adj_path, dataset_dir
-    )
+    # DCRNN predictions (speed) on held-out set
+    if not os.path.exists(pred_path):
+        raise FileNotFoundError(
+            f"Predictions file not found at {pred_path}. Run run_demo_pytorch.py from the DCRNN_PyTorch repo to generate it."
+        )
+    speed_pred, speed_true = load_predictions(pred_path)
 
     # Work in cost space (travel time ~ inverse speed)
-    val_cost_pred = 1.0 / np.maximum(val_pred, 1e-3)
-    val_cost_true = 1.0 / np.maximum(val_true, 1e-3)
-    test_cost_pred = 1.0 / np.maximum(test_pred, 1e-3)
-    test_cost_true = 1.0 / np.maximum(test_true, 1e-3)
+    cost_pred = 1.0 / np.maximum(speed_pred, 1e-3)
+    cost_true = 1.0 / np.maximum(speed_true, 1e-3)
+
+    # Split into calibration/test
+    T = cost_pred.shape[0]
+    split = int(0.6 * T)
+    val_cost_pred, val_cost_true = cost_pred[:split], cost_true[:split]
+    test_cost_pred, test_cost_true = cost_pred[split:], cost_true[split:]
 
     resid = val_cost_true - val_cost_pred
     resid_std = np.std(resid, axis=0, keepdims=True) + 1e-3
