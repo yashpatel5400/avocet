@@ -104,6 +104,10 @@ def robust_newsvendor(region: PredictionRegion, cu=5.0, co=1.0):
     return float(q_var.value)
 
 
+def feasibility_newsvendor(q: float) -> str:
+    return f"q={q:.2f} (nonneg={q>=0})"
+
+
 def main():
     import pandas as pd
 
@@ -160,6 +164,10 @@ def main():
         region = calibrator.predict_region(x_i)
         q_robust = robust_newsvendor(region, cu=cu, co=co)
         q_nom = float(model(x_i).detach().cpu().numpy().squeeze())
+        if i == 0:
+            print("Feasibility check (first test point):")
+            print(f"  robust : {feasibility_newsvendor(q_robust)}")
+            print(f"  nominal: {feasibility_newsvendor(q_nom)}")
         robust_costs.append(newsvendor_cost(q_robust, y_true, cu=cu, co=co))
         nominal_costs.append(newsvendor_cost(q_nom, y_true, cu=cu, co=co))
         true_costs.append(y_true)
