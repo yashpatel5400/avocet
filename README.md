@@ -83,40 +83,50 @@ plt.show()
 ```
 
 ## Deterministic/analytic robustification (affine in the uncertainty)
-For linear/affine dependence on the uncertain parameter `theta`, you can use support functions directly:
+For linear/affine dependence on the uncertain parameter `theta`, build a predictor + score and conformal region, then use support functions:
 ```python
 import cvxpy as cp
 import numpy as np
-from robbuffet import L2BallRegion, robustify_affine_leq, robustify_affine_objective
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+from robbuffet import L2Score, SplitConformalCalibrator, robustify_affine_leq, robustify_affine_objective
 
-region = L2BallRegion(center=np.array([0.2, -0.1]), radius=0.3)
+# toy predictor
+model = torch.nn.Linear(2, 2)
+x_cal = torch.randn(200, 2)
+y_cal = x_cal + 0.1 * torch.randn_like(x_cal)
+cal_loader = DataLoader(TensorDataset(x_cal, y_cal), batch_size=32)
+
+cal = SplitConformalCalibrator(model, L2Score(), cal_loader)
+q = cal.calibrate(alpha=0.1)
+region = cal.predict_region(torch.zeros(1, 2))  # example point
+
 w = cp.Variable(2)
-
-# Robust constraint: <w, theta> <= 1 for all theta in region
 constr = robustify_affine_leq(theta_direction=w, rhs=1.0, region=region)
-
-# Robust objective: minimize ||w||_2 + worst_case(<c, theta>)
-c = w  # example direction depending on w
-obj = robustify_affine_objective(base_obj=cp.norm(w, 2), theta_direction=c, region=region)
-
+obj = robustify_affine_objective(base_obj=cp.norm(w, 2), theta_direction=w, region=region)
 prob = cp.Problem(cp.Minimize(obj), [constr])
 prob.solve(solver="ECOS")
 print(w.value)
 ```
 
 ## Danskin-based robustification (gradient-based)
-For nonconvex or union regions, use the Danskin optimizer:
+For nonconvex or union regions, get a conformal region from a predictor/score, then use the Danskin optimizer:
 ```python
 import numpy as np
-import cvxpy as cp
-from robbuffet import DanskinRobustOptimizer
-from robbuffet.region import UnionRegion, L2BallRegion
+import torch
+from robbuffet import DanskinRobustOptimizer, SplitConformalCalibrator
+from robbuffet.scores import GPCPScore
+from torch.utils.data import DataLoader, TensorDataset
 
-# union of two L2 balls
-region = UnionRegion([
-    L2BallRegion(center=np.array([0.5, 0.0]), radius=0.2),
-    L2BallRegion(center=np.array([-0.5, 0.0]), radius=0.2),
-])
+# toy sampler predictor: returns K samples (K, batch, d)
+def sampler(x):
+    base = torch.randn(5, x.shape[0], 2)
+    return base
+
+score_fn = GPCPScore(sampler)
+cal = SplitConformalCalibrator(sampler, score_fn, DataLoader(TensorDataset(torch.zeros(10, 1), torch.zeros(10, 1)), batch_size=2))
+q = cal.calibrate(alpha=0.1)
+region = cal.predict_region(torch.zeros(1, 1))
 
 def inner(theta_var, w_np):
     return theta_var @ w_np

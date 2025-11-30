@@ -179,30 +179,40 @@ def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
     test_x = simulator(test_theta)
 
     cache_path = "two_moons_flow.pt"
+    device = torch.device("cpu")
     if os.path.exists(cache_path):
-        flow = torch.load(cache_path, map_location="cpu")
+        flow = torch.load(cache_path, map_location=device)
     else:
         flow = build_nsf(train_theta, train_x, z_score_theta="independent", z_score_x="independent")
         opt = torch.optim.Adam(flow.parameters(), lr=1e-3)
+        flow.to(device)
         flow.train()
-        train_ds = TensorDataset(train_x, train_theta)
+        train_ds = TensorDataset(train_x.to(device), train_theta.to(device))
         train_loader = DataLoader(train_ds, batch_size=64, shuffle=True)
         for epoch in range(200):
             for xb, yb in train_loader:
                 opt.zero_grad()
+                xb = xb.to(device)
+                yb = yb.to(device)
                 loss = -flow.log_prob(inputs=yb, context=xb).mean()
                 loss.backward()
                 opt.step()
         torch.save(flow, cache_path)
+    flow.eval()
 
     cal_ds = TensorDataset(cal_x, cal_theta)
     cal_loader = DataLoader(cal_ds, batch_size=64, shuffle=False)
     test_ds = TensorDataset(test_x, test_theta)
 
     def sampler(xb: torch.Tensor) -> torch.Tensor:
+        xb = xb.to(device)
         with torch.no_grad():
-            samples = flow.sample(num_samples=K, context=xb)
-        return samples  # (K, batch, theta_dim)
+            # Repeat context K times and sample one per repeated context, then reshape to (K, batch, theta_dim)
+            batch = xb.shape[0]
+            context_rep = xb.repeat_interleave(K, dim=0)
+            samples_flat = flow.sample(num_samples=1, context=context_rep).squeeze(0)  # (batch*K, theta_dim)
+            samples = samples_flat.view(K, batch, -1)
+        return samples.cpu()
 
     score_fn = GPCPScore(sampler)
     calibrator = SplitConformalCalibrator(sampler, score_fn, cal_loader)
