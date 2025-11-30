@@ -8,9 +8,7 @@ Bike rental demand (UCI Bike Sharing) with robust newsvendor:
 - Region: L2-ball $\mathcal{C}(x) = \{c : \|c - \hat{y}(x)\|_2 \le q\}$.
 - Optimization:
 
-$$
-\min_{q \ge 0} \max_{c \in \mathcal{C}(x)} \; c_u\,\max(c - q, 0) + c_o\,\max(q - c, 0).
-$$
+<img src="https://latex.codecogs.com/svg.image?\min_{q\ge0}\max_{c\in\mathcal{C}(x)}c_u\max(c-q,0)+c_o\max(q-c,0)" />
 
 We solve the inner max over interval endpoints and compare to the nominal plug-in $q = \hat{y}(x)$.
 
