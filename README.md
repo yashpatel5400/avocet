@@ -131,6 +131,17 @@ print(w.value)
 
 Run with `python examples/<script>.py`. The METR-LA script assumes you have generated `examples/DCRNN_PyTorch/data/dcrnn_predictions_pytorch.npz` (see Submodules above).
 
+## Trial runner
+Use `scripts/run_trials.py` to run an example multiple times, cache results, and compare robust vs nominal:
+```bash
+# absolute objectives (no normalization)
+python scripts/run_trials.py --example robust_bike_newsvendor.py --trials 5 --alpha 0.1
+
+# relative gaps (requires avg_cost_oracle from the example)
+python scripts/run_trials.py --example robust_bike_newsvendor.py --trials 5 --alpha 0.1 --relative
+```
+Outputs mean/std and a paired t-test (robust < nominal) when scipy is available. Caches results in `.cache/run_trials.json`.
+
 ## Extending
 - Add new `ScoreFunction` implementations that expose their induced region geometry via `build_region`.
 - For non-convex regions, return `PredictionRegion.union([...])` so optimizers can decompose or sample.
