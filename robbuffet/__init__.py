@@ -44,6 +44,7 @@ __all__ = [
     "SimulationDataset",
     "SimulationDataset",
     "ScenarioRobustOptimizer",
+    "AnalyticSolver",
     "DanskinRobustOptimizer",
     "support_function",
     "robustify_affine_objective",

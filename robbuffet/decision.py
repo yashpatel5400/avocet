@@ -48,6 +48,61 @@ def robustify_affine_leq(
     return support_function(region, theta_direction) <= rhs
 
 
+class AnalyticSolver:
+    """
+    Wrapper to build and solve a convex robust problem using analytic support functions.
+
+    Interface:
+      - base_objective_fn(w) -> cp.Expression (deterministic part)
+      - theta_direction_fn(w) -> cp.Expression (affine theta direction) or None
+      - constraints_fn(w) -> list of cp.Constraint (deterministic)
+      - robust_constraints_fn(w) -> list of (theta_direction_expr, rhs_expr) to be robustified
+    """
+
+    def __init__(
+        self,
+        decision_shape: Tuple[int, ...],
+        region: PredictionRegion,
+        base_objective_fn: Callable[[cp.Variable], cp.Expression],
+        theta_direction_fn: Optional[Callable[[cp.Variable], cp.Expression]] = None,
+        constraints_fn: Optional[Callable[[cp.Variable], Sequence[cp.Constraint]]] = None,
+        robust_constraints_fn: Optional[Callable[[cp.Variable], Sequence[Tuple[cp.Expression, cp.Expression]]]] = None,
+        solver: Optional[str] = None,
+    ):
+        self.decision_shape = decision_shape
+        self.region = region
+        self.base_objective_fn = base_objective_fn
+        self.theta_direction_fn = theta_direction_fn
+        self.constraints_fn = constraints_fn or (lambda w: [])
+        self.robust_constraints_fn = robust_constraints_fn or (lambda w: [])
+        self.solver = solver
+
+    def solve(self) -> Tuple[Optional[np.ndarray], str]:
+        w = cp.Variable(self.decision_shape)
+        base_obj = self.base_objective_fn(w)
+        if self.theta_direction_fn is not None:
+            theta_dir = self.theta_direction_fn(w)
+            obj = robustify_affine_objective(base_obj, theta_dir, self.region)
+        else:
+            obj = base_obj
+
+        constraints: List[cp.Constraint] = list(self.constraints_fn(w))
+        for theta_dir, rhs in self.robust_constraints_fn(w):
+            constraints.append(robustify_affine_leq(theta_dir, rhs, self.region))
+
+        prob = cp.Problem(cp.Minimize(obj), constraints)
+        status = None
+        for solver in ([self.solver] if self.solver else [cp.CLARABEL, cp.ECOS, None]):
+            try:
+                prob.solve(solver=solver)
+            except Exception:
+                continue
+            status = prob.status
+            if w.value is not None:
+                break
+        return (np.array(w.value).astype(float) if w.value is not None else None), status or "failed"
+
+
 class DanskinRobustOptimizer:
     """
     Gradient-based min-max solver using Danskin's Theorem.
