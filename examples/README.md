@@ -39,3 +39,12 @@ $$
 $$
 
 with a robust variant maximizing the worst-case $\min_{v \in \mathcal{C}(x)} \langle v, x\rangle$ (approximated via worst-case per-item values).
+
+## Empirical results (10 trials)
+
+### Newsvendor (Bike Sharing)
+
+| method  | mean objective | std    | paired t-test (robust < nominal) |
+|---------|----------------|--------|----------------------------------|
+| robust  | 2560.51        | 24.30  | t = -90.94, p = 5.958e-15        |
+| nominal | 4370.20        | 83.10  | –                                |

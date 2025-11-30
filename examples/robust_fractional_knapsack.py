@@ -193,7 +193,7 @@ def run_experiment(alpha=0.1, K=8, n_items=10, capacity=5.0, seed=0):
     print(f"{'robust':<12}{true_robust_obj:>12.4f}")
 
     return {
-        "avg_cost_nominal": -true_nominal_obj,  # treat as negative cost for compatibility
+        "avg_cost_nominal": -true_nominal_obj,  # negative so lower is better for t-test
         "avg_cost_robust": -true_robust_obj,
         "avg_cost_oracle": None,
         "q_calibrated": q,

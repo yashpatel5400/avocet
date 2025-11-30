@@ -8,6 +8,7 @@ import json
 import os
 import statistics
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional, Tuple
 
 
@@ -80,6 +81,7 @@ def main():
     parser.add_argument("--relative", action="store_true", help="Report relative gaps using avg_cost_oracle when available")
     parser.add_argument("--cwd", default=".", help="Working directory for the command")
     parser.add_argument("--cache", default=".cache/run_trials.json", help="Cache file to reuse previous runs")
+    parser.add_argument("--workers", type=int, default=os.cpu_count() or 2, help="Parallel workers for trials")
     args = parser.parse_args()
 
     if not os.path.isdir(args.cwd):
@@ -96,16 +98,21 @@ def main():
     needed = max(args.trials - len(robust_vals), 0)
     if needed > 0:
         print(f"Running {needed} additional trial(s); {len(robust_vals)} cached.")
-    for i in range(needed):
-        try:
-            r, n, _ = run_experiment_module(args.example, args.cwd, alpha=args.alpha)
-        except Exception as e:
-            raise SystemExit(f"Trial {len(robust_vals) + 1} failed: {e}")
-        robust_vals.append(r)
-        nominal_vals.append(n)
-        oracle_vals.append(_)
-        cached_runs.append({"robust": r, "nominal": n, "oracle": _})
-        print(f"Trial {len(robust_vals)}: robust_rel={r:.4f}, nominal_rel={n:.4f}")
+    if needed > 0:
+        tasks = [(args.example, args.cwd, args.alpha)] * needed
+        with ProcessPoolExecutor(max_workers=args.workers) as ex:
+            futures = {ex.submit(run_experiment_module, *t): idx for idx, t in enumerate(tasks, start=len(robust_vals) + 1)}
+            for fut in as_completed(futures):
+                idx = futures[fut]
+                try:
+                    r, n, o = fut.result()
+                except Exception as e:
+                    raise SystemExit(f"Trial {idx} failed: {e}")
+                robust_vals.append(r)
+                nominal_vals.append(n)
+                oracle_vals.append(o)
+                cached_runs.append({"robust": r, "nominal": n, "oracle": o})
+                print(f"Trial {idx}: robust={r:.4f}, nominal={n:.4f}")
 
     cache[key] = cached_runs
     save_cache(args.cache, cache)
