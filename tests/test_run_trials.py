@@ -1,8 +1,20 @@
 import subprocess
 import sys
 
+import pytest
+
+
+try:
+    import pandas  # noqa: F401
+except Exception:
+    pandas_available = False
+else:
+    pandas_available = True
+
 
 def test_run_trials_pvalue():
+    if not pandas_available:
+        pytest.skip("pandas not installed; skipping run_trials integration test.")
     cmd = [
         sys.executable,
         "scripts/run_trials.py",
