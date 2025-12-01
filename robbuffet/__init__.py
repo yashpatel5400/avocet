@@ -21,6 +21,7 @@ from .region import (
 from .data import BaseDataset, OfflineDataset, SimulationDataset
 from .decision import (
     ScenarioRobustOptimizer,
+    AnalyticSolver,
     support_function,
     robustify_affine_objective,
     robustify_affine_leq,

@@ -21,7 +21,7 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from robbuffet import L2Score, SplitConformalCalibrator, PredictionRegion, vis
+from robbuffet import L2Score, SplitConformalCalibrator, PredictionRegion, vis, AnalyticSolver
 from robbuffet.scores import conformal_quantile
 
 
@@ -97,13 +97,26 @@ def robust_newsvendor(region: PredictionRegion, cu=5.0, co=1.0):
     r = float(region.radius)
     lb = center - r
     ub = center + r
-    q_var = cp.Variable()
-    t = cp.Variable()
-    cost_lb = co * cp.pos(q_var - lb) + cu * cp.pos(lb - q_var)
-    cost_ub = co * cp.pos(q_var - ub) + cu * cp.pos(ub - q_var)
-    prob = cp.Problem(cp.Minimize(t), [t >= cost_lb, t >= cost_ub, q_var >= 0])
-    prob.solve()
-    return float(q_var.value)
+
+    t_var = cp.Variable()
+
+    def constraints_fn(q):
+        cost_lb = co * cp.pos(q - lb) + cu * cp.pos(lb - q)
+        cost_ub = co * cp.pos(q - ub) + cu * cp.pos(ub - q)
+        return [t_var >= cost_lb, t_var >= cost_ub, q >= 0]
+
+    solver = AnalyticSolver(
+        decision_shape=(),
+        region=region,
+        base_objective_fn=lambda q: t_var,
+        theta_direction_fn=None,
+        constraints_fn=constraints_fn,
+        robust_constraints_fn=None,
+    )
+    q_star, status = solver.solve()
+    if q_star is None:
+        raise RuntimeError(f"Robust newsvendor solve failed with status {status}")
+    return float(np.array(q_star).squeeze())
 
 
 def feasibility_newsvendor(q: float) -> str:
