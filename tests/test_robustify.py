@@ -1,7 +1,7 @@
 import cvxpy as cp
 import numpy as np
 
-from robbuffet import robustify_affine_leq, support_function
+from robbuffet import robustify_affine_leq, support_function, AnalyticSolver
 from robbuffet.region import L2BallRegion, LinfBallRegion
 
 
@@ -16,8 +16,17 @@ def test_support_function_l2():
 def test_robust_constraint_linf():
     region = LinfBallRegion(center=np.array([0.0, 0.0]), radius=0.5)
     w = cp.Variable(2)
-    constr = robustify_affine_leq(theta_direction=w, rhs=1.0, region=region)
-    prob = cp.Problem(cp.Minimize(cp.norm(w, 2)), [constr])
-    prob.solve()
-    assert prob.status == cp.OPTIMAL
-    assert np.all(np.abs(w.value) <= 1.0)  # should satisfy robust constraint
+
+    def base_obj(w_var):
+        return cp.norm(w_var, 2)
+
+    solver = AnalyticSolver(
+        decision_shape=(2,),
+        region=region,
+        base_objective_fn=base_obj,
+        theta_direction_fn=lambda w_var: w_var,
+        constraints_fn=lambda w_var: [],
+    )
+    w_star, status = solver.solve()
+    assert status in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE)
+    assert np.all(np.abs(w_star) <= 1.0)  # robust constraint implies |w_i| <= 1

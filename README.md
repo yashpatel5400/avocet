@@ -89,7 +89,7 @@ import cvxpy as cp
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from robbuffet import L2Score, SplitConformalCalibrator, robustify_affine_leq, robustify_affine_objective
+from robbuffet import L2Score, SplitConformalCalibrator, AnalyticSolver
 
 # toy predictor
 model = torch.nn.Linear(2, 2)
@@ -101,12 +101,21 @@ cal = SplitConformalCalibrator(model, L2Score(), cal_loader)
 q = cal.calibrate(alpha=0.1)
 region = cal.predict_region(torch.zeros(1, 2))  # example point
 
-w = cp.Variable(2)
-constr = robustify_affine_leq(theta_direction=w, rhs=1.0, region=region)
-obj = robustify_affine_objective(base_obj=cp.norm(w, 2), theta_direction=w, region=region)
-prob = cp.Problem(cp.Minimize(obj), [constr])
-prob.solve(solver="ECOS")
-print(w.value)
+def base_obj(w):
+    return cp.norm(w, 2)
+
+def theta_dir(w):
+    return w
+
+solver = AnalyticSolver(
+    decision_shape=(2,),
+    region=region,
+    base_objective_fn=base_obj,
+    theta_direction_fn=theta_dir,
+    constraints_fn=lambda w: [],
+)
+w_star, status = solver.solve()
+print("status:", status, "w*:", w_star)
 ```
 
 ## Danskin-based robustification (gradient-based)
