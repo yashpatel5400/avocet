@@ -82,7 +82,7 @@ vis.plot_region_2d(region, grid_limits=((-1, 1), (-1, 1)), resolution=200)
 plt.show()
 ```
 
-## Deterministic/analytic robustification (affine in the uncertainty)
+## Affine Robust Solver
 For linear/affine dependence on the uncertain parameter `theta`, build a predictor + score and conformal region, then use support functions:
 ```python
 import cvxpy as cp
@@ -123,7 +123,19 @@ w_star, status = solver.solve()
 print("status:", status, "w*:", w_star)
 ```
 
-## Danskin-based robustification (gradient-based)
+`AffineRobustSolver` assumes the uncertain parameter enters the problem **affinely**. The robustified optimization has the form:
+
+$\min_{w} \; g(w) + \sup_{\theta \in \mathcal{C}(x)} \langle d(w), \theta \rangle$  
+$\text{s.t. } h_i(w) \le 0, \; \langle a_j(w), \theta \rangle \le b_j(w) \;\; \forall \theta \in \mathcal{C}(x).$
+
+Here:
+- $g(w)$, $h_i(w)$, $b_j(w)$ are convex in $w$.
+- The dependence on $\theta$ is affine: $\langle d(w), \theta \rangle$ in the objective and $\langle a_j(w), \theta \rangle$ in constraints.
+- $\mathcal{C}(x)$ is the conformal region.
+
+`AffineRobustSolver` replaces the affine $\theta$ terms with support functions $h_{\mathcal{C}}(\cdot)$; non-affine $\theta$ dependence is **not** supported. Use the Danskin or sampling-based approaches when the uncertainty enters non-affinely or the region is nonconvex/union and you prefer gradient-based optimization.
+
+## Gradient-Based (Danskin) Solver
 For nonconvex or union regions, get a conformal region from a predictor/score, then use the Danskin optimizer:
 ```python
 import numpy as np
@@ -157,15 +169,13 @@ print("Danskin w*:", w_star)
 ## When to use AffineRobustSolver
 `AffineRobustSolver` assumes the uncertain parameter enters the problem **affinely**. The robustified optimization has the form:
 
-$$
-\min_{w} \; g(w) + \sup_{\theta \in \mathcal{C}(x)} \langle d(w), \theta \rangle \\
-\text{s.t. } h_i(w) \le 0, \; \langle a_j(w), \theta \rangle \le b_j(w) \;\; \forall \theta \in \mathcal{C}(x).
-$$
+$\min_{w} \; g(w) + \sup_{\theta \in \mathcal{C}(x)} \langle d(w), \theta \rangle$  
+$\text{s.t. } h_i(w) \le 0, \; \langle a_j(w), \theta \rangle \le b_j(w) \;\; \forall \theta \in \mathcal{C}(x).$
 
 Here:
-- \(g(w)\), \(h_i(w)\), \(b_j(w)\) are convex in \(w\).
-- The dependence on \(\theta\) is affine: \(\langle d(w), \theta \rangle\) in the objective and \(\langle a_j(w), \theta \rangle\) in constraints.
-- \(\mathcal{C}(x)\) is the conformal region.
+- $g(w)$, $h_i(w)$, $b_j(w)$ are convex in $w$.
+- The dependence on $\theta$ is affine: $\langle d(w), \theta \rangle$ in the objective and $\langle a_j(w), \theta \rangle$ in constraints.
+- $\mathcal{C}(x)$ is the conformal region.
 
 `AffineRobustSolver` replaces the affine \(\theta\) terms with support functions \(h_{\mathcal{C}}(\cdot)\); non-affine \(\theta\) dependence is **not** supported. Use the Danskin or sampling-based approaches when the uncertainty enters non-affinely or the region is nonconvex/union and you prefer gradient-based optimization.
 
