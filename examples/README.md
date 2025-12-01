@@ -8,9 +8,7 @@ Bike rental demand (UCI Bike Sharing) with robust newsvendor:
 - Region: L2-ball $\mathcal{C}(x) = \{c : \|c - \hat{y}(x)\|_2 \le q\}$.
 - Optimization:
 
-$$
-\min_{q \ge 0} \max_{c \in C(x)} \quad c_u\,\max(c - q, 0) + c_o\,\max(q - c, 0).
-$$
+$\min_{q \ge 0} \max_{c \in \mathcal{C}(x)} \quad c_u (c - q)^+ + c_o (q - c)^+.$
 
 We solve the inner max over interval endpoints and compare to the nominal plug-in $q = \hat{y}(x)$.
 
@@ -20,11 +18,9 @@ Robust shortest path on METR-LA with conformalized DCRNN forecasts:
 - Region: union of L2-balls over sampled costs $\mathcal{C}(x) = \bigcup_{k} \{c : \|c - \hat{c}_k\|_2 \le q\}$.
 - Optimization (flow vector $w$, incidence $A$, supply $b$):
 
-$$
-\min_{w} \quad t \quad
-\text{s.t. } A w = b,\quad 0 \le w \le 1,\quad
-t \ge \langle c_k, w\rangle + q \|w\|_2 \quad\quad \forall k.
-$$
+$\min_{w} \quad t$
+$\text{s.t. }\quad A w = b,\quad 0 \le w \le 1,\quad$
+$t \ge \langle c_k, w\rangle + q \|w\|_2 \quad\quad \forall k.$
 
 Nominal solves $\min_w \langle \bar{c}, w\rangle$ with mean cost $\bar{c}$.
 
@@ -34,9 +30,8 @@ Fractional knapsack with SBIBM two_moons simulator:
 - Region: union of L2-balls over sampled value vectors $\mathcal{C}(x) = \bigcup_k \{v : \|v - \hat{v}_k\|_2 \le q\}$; weights fixed to nominal.
 - Optimization (fractional decision $x \in [0,1]^m$, capacity $B$):
 
-$$
-\max_{x} \; \langle v, x\rangle \quad \text{s.t. } \langle w, x\rangle \le B,\; 0 \le x \le 1,
-$$
+$\max_{x} \quad \langle v, x\rangle$
+$\text{s.t. } \quad \langle w, x\rangle \le B,\quad 0 \le x \le 1$
 
 with a robust variant maximizing the worst-case $\min_{v \in \mathcal{C}(x)} \langle v, x\rangle$ (approximated via worst-case per-item values).
 
