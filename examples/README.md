@@ -16,11 +16,10 @@ We solve the inner max over interval endpoints and compare to the nominal plug-i
 Robust shortest path on METR-LA with conformalized DCRNN forecasts:
 - Predictor: DCRNN_PyTorch speeds $\hat{s}(x)$; costs are $c = 1/\hat{s}$.
 - Region: union of L2-balls over sampled costs $\mathcal{C}(x) = \bigcup_{k} \{c : \|c - \hat{c}_k\|_2 \le q\}$.
-- Optimization (flow vector $w$, incidence $A$, supply $b$):
+- Robust formulation (flow vector $w$, incidence $A$, supply $b$):
 
-$\min_{w} \quad t$
-$\text{s.t. }\quad A w = b,\quad 0 \le w \le 1,\quad$
-$t \ge \langle c_k, w\rangle + q \|w\|_2 \quad\quad \forall k.$
+$\min_{w} \max_{c \in \mathcal{C}(x)} \langle c, w\rangle$
+$\text{s.t. } \quad A w = b \quad 0 \le w \le 1.$
 
 Nominal solves $\min_w \langle \bar{c}, w\rangle$ with mean cost $\bar{c}$.
 
