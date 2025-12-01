@@ -1,13 +1,13 @@
 # Conformal Scores and Regions
 
 ## Residual-based scores
-- L2Score: \(s(x,y) = \|f(x) - y\|_2\) → L2 ball.
-- L1Score: \(s(x,y) = \|f(x) - y\|_1\) → L1 ball.
-- LinfScore: \(s(x,y) = \|f(x) - y\|_\infty\) → Linf ball.
-- MahalanobisScore: \(s(x,y) = \sqrt{(f(x)-y)^\top W (f(x)-y)}\) → ellipsoid.
+- L2Score: $s(x,y) = \|f(x) - y\|_2$ → L2 ball.
+- L1Score: $s(x,y) = \|f(x) - y\|_1$ → L1 ball.
+- LinfScore: $s(x,y) = \|f(x) - y\|_\infty$ → Linf ball.
+- MahalanobisScore: $s(x,y) = \sqrt{(f(x)-y)^\top W (f(x)-y)}$ → ellipsoid.
 
 ## GPCPScore (union of balls)
-- Score: \(s(x,y) = \min_{k} \| \text{sample}_k(x) - y \|_2\).
+- Score: $s(x,y) = \min_{k} \| \text{sample}_k(x) - y \|_2$.
 - Predictor returns K samples; prediction region becomes a union of L2 balls centered at the samples with radius equal to the conformal quantile.
 - Useful with generative models that can sample conditional outputs.
 
