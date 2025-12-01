@@ -30,10 +30,9 @@ Fractional knapsack with SBIBM two_moons simulator:
 - Region: union of L2-balls over sampled value vectors $\mathcal{C}(x) = \bigcup_k \{v : \|v - \hat{v}_k\|_2 \le \widehat{q}\}$; weights fixed to nominal.
 - Optimization (fractional decision $x \in [0,1]^m$, capacity $B$):
 
-$\max_{x} \quad \langle v, x\rangle$
-$\text{s.t. } \quad \langle w, x\rangle \le B,\quad 0 \le x \le 1$
+$\max_{x} \min_{v \in \mathcal{C}(x)} \langle v, x\rangle$
 
-with a robust variant maximizing the worst-case $\min_{v \in \mathcal{C}(x)} \langle v, x\rangle$ (approximated via worst-case per-item values).
+$\text{s.t. } \quad \langle w, x\rangle \le B,\quad 0 \le x \le 1$
 
 ## Empirical results (10 trials)
 
