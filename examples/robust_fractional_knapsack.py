@@ -166,6 +166,9 @@ def run_experiment(alpha=0.1, K=8, n_items=None, capacity=None, seed=0, task_nam
     if flows is None:
         raise ImportError("pyknos/nflows is required. Install with `pip install pyknos sbi`.") from _nflows_import_error
 
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
     task = sbibm.get_task(task_name)
     prior = task.get_prior()
     simulator = task.get_simulator()
@@ -294,6 +297,7 @@ if __name__ == "__main__":
     parser.add_argument("--K", type=int, default=8)
     parser.add_argument("--n-items", type=int, default=None)
     parser.add_argument("--capacity", type=float, default=None)
+    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--task", type=str, default="gaussian_linear", help="SBIBM task name")
     args = parser.parse_args()
     run_experiment(
@@ -301,5 +305,6 @@ if __name__ == "__main__":
         K=args.K,
         n_items=args.n_items,
         capacity=args.capacity,
+        seed=args.seed,
         task_name=args.task,
     )

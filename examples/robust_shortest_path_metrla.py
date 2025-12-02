@@ -153,7 +153,10 @@ def run_experiment(
     source: int = 0,
     target: int = 10,
     use_danskin: bool = False,
+    seed: int = 0,
 ):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     dcrnn_root = os.path.abspath(dcrnn_root)
     adj_path = os.path.abspath(adj)
     pred_path = os.path.abspath(predictions)
@@ -190,9 +193,11 @@ def run_experiment(
     resid = val_cost_true - val_cost_pred
     resid_std = np.std(resid, axis=0, keepdims=True) + 1e-3
 
+    rng = np.random.default_rng(seed)
+
     def sampler(xb: torch.Tensor) -> torch.Tensor:
         base = xb.cpu().numpy()
-        noise = np.random.normal(scale=resid_std.squeeze(), size=(K, base.shape[0], base.shape[1]))
+        noise = rng.normal(scale=resid_std.squeeze(), size=(K, base.shape[0], base.shape[1]))
         samples = base[None, ...] + noise
         return torch.tensor(samples, dtype=torch.float32)
 
@@ -337,6 +342,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=int, default=0)
     parser.add_argument("--target", type=int, default=10)
     parser.add_argument("--use-danskin", action="store_true", help="Use Danskin gradient-based robust optimizer")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed for sampling noise.")
     args = parser.parse_args()
     run_experiment(
         alpha=args.alpha,
@@ -347,4 +353,5 @@ if __name__ == "__main__":
         source=args.source,
         target=args.target,
         use_danskin=args.use_danskin,
+        seed=args.seed,
     )

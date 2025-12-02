@@ -127,6 +127,9 @@ def run_experiment(alpha: float = 0.1, cu: float = 5.0, co: float = 1.0, num_tes
     if not DATA_PATH.exists():
         raise FileNotFoundError("Missing data/day.csv. Download Bike Sharing dataset first.")
 
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+
     X, y = load_bike_data()
     n = len(X)
     rng = np.random.default_rng(seed)

@@ -51,7 +51,7 @@ def save_cache(path: str, data: Dict[str, List[Dict[str, float]]]) -> None:
         json.dump(data, f, indent=2)
 
 
-def run_experiment_module(example: str, cwd: str, alpha: float) -> Tuple[float, float, float]:
+def run_experiment_module(example: str, cwd: str, alpha: float, seed: Optional[int]) -> Tuple[float, float, float, Optional[int]]:
     """
     Import the example module and call run_experiment() to get costs and oracle.
     """
@@ -64,13 +64,16 @@ def run_experiment_module(example: str, cwd: str, alpha: float) -> Tuple[float, 
     spec.loader.exec_module(module)  # type: ignore[arg-type]
     if not hasattr(module, "run_experiment"):
         raise AttributeError(f"{example} does not expose run_experiment()")
-    results = module.run_experiment(alpha=alpha)
+    kwargs = {"alpha": alpha}
+    if seed is not None:
+        kwargs["seed"] = seed
+    results = module.run_experiment(**kwargs)
     oracle = results.get("avg_cost_oracle")
     robust = results.get("avg_cost_robust")
     nominal = results.get("avg_cost_nominal")
     if robust is None or nominal is None:
         raise ValueError("run_experiment did not return required cost fields")
-    return float(robust), float(nominal), float(oracle) if oracle is not None else None
+    return float(robust), float(nominal), float(oracle) if oracle is not None else None, seed
 
 
 def main():
@@ -89,32 +92,41 @@ def main():
 
     cache = load_cache(args.cache)
     key = cache_key(args.example, args.cwd, args.alpha, args.trials)
-    cached_runs = cache.get(key, [])
+    cached_runs = sorted(cache.get(key, []), key=lambda e: e.get("seed", 0))
 
-    robust_vals: List[float] = [r["robust"] for r in cached_runs[: args.trials]]
-    nominal_vals: List[float] = [r["nominal"] for r in cached_runs[: args.trials]]
-    oracle_vals: List[Optional[float]] = [r.get("oracle") for r in cached_runs[: args.trials]]
+    robust_vals: List[float] = []
+    nominal_vals: List[float] = []
+    oracle_vals: List[Optional[float]] = []
 
-    needed = max(args.trials - len(robust_vals), 0)
-    if needed > 0:
-        print(f"Running {needed} additional trial(s); {len(robust_vals)} cached.")
-    if needed > 0:
-        tasks = [(args.example, args.cwd, args.alpha)] * needed
+    seeds = list(range(args.trials))
+    start_cached = min(len(cached_runs), args.trials)
+    for i in range(start_cached):
+        entry = cached_runs[i]
+        robust_vals.append(entry["robust"])
+        nominal_vals.append(entry["nominal"])
+        oracle_vals.append(entry.get("oracle"))
+
+    needed_seeds = seeds[start_cached:]
+    if needed_seeds:
+        print(f"Running {len(needed_seeds)} additional trial(s); {start_cached} cached.")
         with ProcessPoolExecutor(max_workers=args.workers) as ex:
-            futures = {ex.submit(run_experiment_module, *t): idx for idx, t in enumerate(tasks, start=len(robust_vals) + 1)}
+            futures = {
+                ex.submit(run_experiment_module, args.example, args.cwd, args.alpha, seed): seed for seed in needed_seeds
+            }
             for fut in as_completed(futures):
-                idx = futures[fut]
+                seed = futures[fut]
                 try:
-                    r, n, o = fut.result()
+                    r, n, o, _ = fut.result()
                 except Exception as e:
-                    raise SystemExit(f"Trial {idx} failed: {e}")
+                    raise SystemExit(f"Trial (seed={seed}) failed: {e}")
                 robust_vals.append(r)
                 nominal_vals.append(n)
                 oracle_vals.append(o)
-                cached_runs.append({"robust": r, "nominal": n, "oracle": o})
-                print(f"Trial {idx}: robust={r:.4f}, nominal={n:.4f}")
+                cached_runs.append({"seed": seed, "robust": r, "nominal": n, "oracle": o})
+                print(f"Trial (seed={seed}): robust={r:.4f}, nominal={n:.4f}")
 
-    cache[key] = cached_runs
+    cached_runs = sorted(cached_runs, key=lambda e: e.get("seed", 0))
+    cache[key] = cached_runs[: args.trials]
     save_cache(args.cache, cache)
 
     # Paired t-test (robust < nominal) if scipy is available
