@@ -19,6 +19,7 @@
 - Deterministic (affine in uncertainty): use `robustify_affine_objective` / `robustify_affine_leq` with `region.support_function` (unions use max of component supports).
 - Scenario-based: `ScenarioRobustOptimizer` samples from regions (works for unions).
 - Gradient-based Danskin: `DanskinRobustOptimizer` solves inner maximization per component (works for unions) and updates w via gradients (optionally autograd).
+- Example (capacity planning): $\min_{0 \le c \le \bar{c}} \max_{\lambda \in \mathcal{C}(x)} c_{\text{cap}} c + c_{\text{short}} (\lambda - \mu c)^+$ with $\mathcal{C}(x)$ an L2 interval.
 
 ## Region volume
 - Regions provide `volume` when closed-form (L2/L1/Linf balls, ellipsoids); unions return None.

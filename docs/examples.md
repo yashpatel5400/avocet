@@ -24,6 +24,11 @@ Run any script with `python examples/<script>.py`.
 - Region: $\mathcal{C}(x) = \bigcup_k \{v : \|v - \hat{v}_k\|_2 \le q\}$ (weights fixed to nominal proxy).
 - Objective: $\max_{x} \; \langle v, x\rangle \quad \text{s.t. } \langle w, x\rangle \le B,\; 0 \le x \le 1$, with robust variant using worst-case $v$.
 
+**Capacity planning (synthetic arrivals)**
+
+- Region: $\mathcal{C}(x) = \{ \lambda : |\lambda - \hat{\lambda}(x)| \le q\}$ (L2 interval around predicted arrival rate).
+- Objective: $\min_{0 \le c \le \bar{c}} \; \max_{\lambda \in \mathcal{C}(x)} \; c_{\text{cap}} \, c + c_{\text{short}} \, (\lambda - \mu c)^+$, where $c$ is capacity (servers), $\mu$ is service rate, and $c_{\text{cap}}, c_{\text{short}}$ are cost coefficients. Inner max is approximated by sampling from $\mathcal{C}(x)$.
+
 ## Empirical results (10 trials)
 
 ### Newsvendor (Bike Sharing)
