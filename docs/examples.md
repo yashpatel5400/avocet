@@ -45,18 +45,9 @@ Run any script with `python examples/<script>.py`.
 | robust  | 109.58         | 15.56    | t = -9.52, p = 2.682e-06         |
 | nominal | 12112.04       | 3780.02  | –                                |
 
-## Empirical results (10 trials)
-
-### Newsvendor (Bike Sharing)
+### Capacity planning
 
 | method  | mean objective | std    | paired t-test (robust < nominal) |
 |---------|----------------|--------|----------------------------------|
-| robust  | 2560.51        | 24.30  | t = -90.94, p = 5.958e-15        |
-| nominal | 4370.20        | 83.10  | –                                |
-
-### Shortest path (METR-LA)
-
-| method  | mean objective | std      | paired t-test (robust < nominal) |
-|---------|----------------|----------|----------------------------------|
-| robust  | 109.58         | 15.56    | t = -9.52, p = 2.682e-06         |
-| nominal | 12112.04       | 3780.02  | –                                |
+| robust  | 8.0131         | 1.0061 | t = -28.7643, p = 1.807e-10      |
+| nominal | 45.9437        | 4.2929 | –                                |
